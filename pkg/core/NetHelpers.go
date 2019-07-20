@@ -20,12 +20,13 @@ func (n NeuralNet) initMatrixes(inputData []float64) (*mat.Dense, *mat.Dense, *m
 
 // executeLayer is a function that executes a layer of the neural network
 // The function will modify the arguments to do it's work
-// layerNum: The layer that the function will execute
-// inputData: The input data to the network. Should have dims of (n.inputCount, 1)
-// middleData: A matrix that will be used to store the data when executing the middle layers.
-// 						 Should have dims of (n.hiddenLayerSize, 1)
-// outputData: A matrix that will be used to store the output data from the network
-//             Should have dims of (n.outputCount, 1)
+// ------------
+// 	layerNum:		The layer that the function will execute
+// 	inputData:	The input data to the network. Should have dims of (n.inputCount, 1)
+// 	middleData:	A matrix that will be used to store the data when executing the middle layers.
+// 							Should have dims of (n.hiddenLayerSize, 1)
+// 	outputData:	A matrix that will be used to store the output data from the network
+// 							Should have dims of (n.outputCount, 1)
 // ------------
 // The function will decide which *mat.Dense to use depending on what layer you are executing
 // To run an entire network operation you will need to give all inputs of layerNum from
@@ -86,6 +87,11 @@ func generateWeights(sizeX int, sizeY int) []float64 {
 	return data
 }
 
+// sigmoidPrimeWrapper is a wrapper for use in mat.Apply
+func sigmoidPrimeWrapper(row int, col int, value float64) float64 {
+	return sigmoidPrime(value)
+}
+
 // sigmoidWrapper is a function that wraps the sigmoid function to allow for use is mat.Apply
 func sigmoidWrapper(row int, col int, value float64) float64 {
 	return sigmoid(value)
@@ -100,4 +106,23 @@ func sigmoidInverseWrapper(row int, col int, value float64) float64 {
 func printMat(data *mat.Dense) {
 	f := mat.Formatted(data, mat.Prefix("    "), mat.Squeeze())
 	fmt.Printf("mat:\na = % v\n\n", f)
+}
+
+// backPropIter is a function that does the process for a single iteration of backprop
+// ------------
+// 	layerIndex:	The index of the layer that we are adjusting the weights for
+// 	inputInfo:	The input for the layer that we are adjusting for
+// 	outputInfo:	The outputs for the layer that we are adjusting for
+// 	layerErr:		The error for the layer
+// ------------
+// This function will change the weights of the neural network but shouldn't have any extra side effects
+func (n NeuralNet) backPropIter(layerIndex int, inputInfo *mat.Dense, outputInfo *mat.Dense, layerErr *mat.Dense) {
+	tmp := mat.NewDense(n.hiddenLayerSize, n.hiddenLayerSize, nil) // Create tmp mat for calculations
+	outputCopy := mat.DenseCopyOf(outputInfo)                      // Copy mdo into tmp matrix
+	inputCopy := mat.DenseCopyOf(inputInfo)                        // Copy mdi into tmp matrix
+	outputCopy.Apply(sigmoidPrimeWrapper, outputCopy)              // Apply sigmoid prime to mdo
+	tmp.Mul(layerErr, outputCopy)                                  // Multiply layer error and mdoCopy
+	inputCopy.Product(tmp, inputCopy)                              // Take dot product of layer input values and tmp
+	inputCopy.Scale(n.learningRate, inputCopy)                     // Scale the error adjustment by the learning rate
+	n.weights[layerIndex].Add(inputCopy, n.weights[layerIndex])    // Adjust the weights
 }

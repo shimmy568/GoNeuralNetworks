@@ -99,32 +99,40 @@ func (n NeuralNet) backProp(item TrainingItem) error {
 		err.Set(i, 0, res[i]-item.expectedOutput[i])
 	}
 
-	// Run the errors in reverse and place the final values in ferr for use in backprop
-	_, ferr, _ := n.initMatrixes(item.inputData)
-	n.executeLayerReverse(n.hiddenLayers-1, nil, nil, ferr, err) // Execute the last layer in reverse
+	// Run the errors in reverse and place the final values in firstLayerError for use in backprop
+	_, firstLayerError, _ := n.initMatrixes(item.inputData)
+	n.executeLayerReverse(n.hiddenLayers-1, nil, nil, firstLayerError, err) // Execute the last layer in reverse
 
 	for i := n.hiddenLayers - 2; i > 0; i-- { // Don't execute the last and first layers of the network
-		n.executeLayerReverse(i, nil, ferr, ferr, nil) // Execute the layer of the network in reverse
+		n.executeLayerReverse(i, nil, firstLayerError, firstLayerError, nil) // Execute the layer of the network in reverse
 	}
 
 	// mdi is middle layer input mdo is middle layer output since we need to keep track of both
 	// for the backprop process
 	data, mdi, o := n.initMatrixes(item.inputData)
 	mdo := mat.DenseCopyOf(mdi)
-	for i := 0; i < n.hiddenLayers+1; i++ {
-		n.executeLayer(i, data, mdi, mdo, o)
 
+	// creating temp mats that are used in backprop math
+	for i := 0; i < n.hiddenLayers; i++ {
+		n.executeLayer(i, data, mdi, mdo, o)
+		terr := mat.DenseCopyOf(firstLayerError)
+
+		// Move error forward a level before we adjust the weights for the layer
+		n.executeLayer(i+1, nil, firstLayerError, firstLayerError, nil)
+
+		// Adjust weights for layer
 		if i == n.hiddenLayers {
 			// If network is on last layer use mdi/o for input/output
+			n.backPropIter(i, mdi, o, terr)
 
 			// Don't bother copying the data from mdi to mdo since it's the last step anyhow
-			continue
+			break
 		} else if i == 0 {
-			// If on first layer use data and mdo for input/output
-
+			// If on first layer use data/mdo for input/output
+			n.backPropIter(i, data, mdo, terr)
 		} else {
 			// If network is not on last/first layer use mdi/mdo for input/output
-
+			n.backPropIter(i, mdi, mdo, terr)
 		}
 
 		// Copy data from mdo to mdi
