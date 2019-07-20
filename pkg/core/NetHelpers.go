@@ -1,0 +1,103 @@
+package core
+
+import (
+	"fmt"
+	"math/rand"
+
+	"gonum.org/v1/gonum/mat"
+)
+
+// This file stores some of the helper functions for the NeuralNetwork struct
+
+// The function sets up the arrays for the forward propagation process
+func (n NeuralNet) initMatrixes(inputData []float64) (*mat.Dense, *mat.Dense, *mat.Dense) {
+	data := mat.NewDense(n.inputCount, 1, inputData)
+	md := mat.NewDense(n.hiddenLayerSize, 1, nil)
+	o := mat.NewDense(n.outputCount, 1, nil)
+
+	return data, md, o
+}
+
+// executeLayer is a function that executes a layer of the neural network
+// The function will modify the arguments to do it's work
+// layerNum: The layer that the function will execute
+// inputData: The input data to the network. Should have dims of (n.inputCount, 1)
+// middleData: A matrix that will be used to store the data when executing the middle layers.
+// 						 Should have dims of (n.hiddenLayerSize, 1)
+// outputData: A matrix that will be used to store the output data from the network
+//             Should have dims of (n.outputCount, 1)
+// ------------
+// The function will decide which *mat.Dense to use depending on what layer you are executing
+// To run an entire network operation you will need to give all inputs of layerNum from
+// 0 - n.hiddenLayers
+func (n NeuralNet) executeLayer(
+	layerNum int,
+	inputData *mat.Dense,
+	middleDataInput *mat.Dense,
+	middleDataOutput *mat.Dense,
+	outputData *mat.Dense,
+) {
+	if layerNum == n.hiddenLayers {
+		// It's the last step in the prop so use o
+		outputData.Product(n.weights[layerNum], middleDataInput) // Do matrix mult step
+		outputData.Apply(sigmoidWrapper, outputData)             // Do sigmoid step
+	} else if layerNum == 0 {
+		// First pass so use md to store and data as input
+		middleDataOutput.Product(n.weights[layerNum], inputData) // Do matrix mult step
+		middleDataOutput.Apply(sigmoidWrapper, middleDataOutput) // Do sigmoid step
+	} else {
+		// It's not the last step so use md
+		middleDataOutput.Product(n.weights[layerNum], middleDataInput) // Do matrix mult step
+		middleDataOutput.Apply(sigmoidWrapper, middleDataOutput)       // Do sigmoid step
+	}
+}
+
+// executeLayerReverse does the same thing as executeLayer but uses an inverse sigmoid function instead of sigmoid
+// This allows us to run the error through the network backwards easily
+func (n NeuralNet) executeLayerReverse(
+	layerNum int,
+	inputData *mat.Dense,
+	middleDataInput *mat.Dense,
+	middleDataOutput *mat.Dense,
+	outputData *mat.Dense,
+) {
+	if layerNum == n.hiddenLayers {
+		// It's the last step in the prop so use o
+		outputData.Product(n.weights[layerNum], middleDataInput) // Do matrix mult step
+		outputData.Apply(sigmoidInverseWrapper, outputData)      // Do sigmoid step
+	} else if layerNum == 0 {
+		// First pass so use md to store and data as input
+		middleDataOutput.Product(n.weights[layerNum], inputData)        // Do matrix mult step
+		middleDataOutput.Apply(sigmoidInverseWrapper, middleDataOutput) // Do sigmoid step
+	} else {
+		// It's not the last step so use md
+		middleDataOutput.Product(n.weights[layerNum], middleDataInput)  // Do matrix mult step
+		middleDataOutput.Apply(sigmoidInverseWrapper, middleDataOutput) // Do sigmoid step
+	}
+}
+
+// generateWeights generates a random set of weights for the creation of the network
+func generateWeights(sizeX int, sizeY int) []float64 {
+	data := make([]float64, sizeX*sizeY)
+	for i := 0; i < sizeX*sizeY; i++ {
+		data[i] = rand.NormFloat64()
+	}
+
+	return data
+}
+
+// sigmoidWrapper is a function that wraps the sigmoid function to allow for use is mat.Apply
+func sigmoidWrapper(row int, col int, value float64) float64 {
+	return sigmoid(value)
+}
+
+// sigmoidInverseWrapper is a wrapper for the sigmoidInverse for the use in mat.Apply
+func sigmoidInverseWrapper(row int, col int, value float64) float64 {
+	return sigmoidInverse(value)
+}
+
+// printMat prints a matrix to the console in a human readable way
+func printMat(data *mat.Dense) {
+	f := mat.Formatted(data, mat.Prefix("    "), mat.Squeeze())
+	fmt.Printf("mat:\na = % v\n\n", f)
+}
