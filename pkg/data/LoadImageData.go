@@ -8,6 +8,24 @@ import (
 
 // This file is responsable for loading the image data into an image struct
 
+// LoadMonochromeImages loads multiple images into MonochromeImageData structs
+func LoadMonochromeImages(paths []string) ([]*MonochromeImageData, error) {
+	output := make([]*MonochromeImageData, len(paths)) // Create output data array
+
+	for i := 0; i < len(paths); i++ {
+		// Load an image and check for errors
+		img, err := LoadMonochromeImage(paths[i])
+		if err != nil {
+			return nil, err
+		}
+
+		// Load the img data into the output array
+		output[i] = img
+	}
+
+	return output, nil
+}
+
 // LoadMonochromeImage loads an image into a MonochromeImageData given a path to the image
 func LoadMonochromeImage(path string) (*MonochromeImageData, error) {
 	// Load image from file and check for error
