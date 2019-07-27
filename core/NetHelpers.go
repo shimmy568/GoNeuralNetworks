@@ -1,8 +1,11 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
+
+	"github.com/shimmy568/NGin/data"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -125,4 +128,43 @@ func (n NeuralNet) backPropIter(layerIndex int, inputInfo *mat.Dense, outputInfo
 	inputCopy.Product(tmp, inputCopy)                              // Take dot product of layer input values and tmp
 	inputCopy.Scale(n.learningRate, inputCopy)                     // Scale the error adjustment by the learning rate
 	n.weights[layerIndex].Add(inputCopy, n.weights[layerIndex])    // Adjust the weights
+}
+
+// vectorizeMatrix takes a 2D matrix with many columns and turns it into a matrix with only 1 row (vector)
+func vectorizeMatrix(matrix *mat.Dense) *mat.VecDense {
+	// Init vector
+	width, height := matrix.Dims()
+	output := mat.NewVecDense(width*height, nil)
+
+	// Copy data from matrix to vector
+	for col := 0; col < width; col++ {
+		for row := 0; row < height; row++ {
+			output.SetVec(col+row, matrix.At(col, row))
+		}
+	}
+
+	// Return vector
+	return output
+}
+
+// TrainMonnochromeImage trains a neural network
+func (n *NeuralNet) TrainMonnochromeImage(image data.MonochromeImageData, expectedOutput *mat.VecDense) (err error) {
+	// Check that the image is the right size
+	imageMat := image.GetDense()
+	imageWidth, imageHeight := imageMat.Dims()
+	if imageWidth*imageHeight != n.inputCount {
+		return errors.New("input image is incorrect size for number of input nodes in the network")
+	}
+
+	// Check that expectedOutput is right size
+	if expectedOutput.Len() == n.outputCount {
+		return errors.New("expected output is incorrect size for number of output nodes in the network")
+	}
+
+	// Turn matrix into vector and turn into training item struct
+	_ = CreateTrainingItem(vectorizeMatrix(imageMat), expectedOutput)
+
+	// Train network with vector
+
+	return nil
 }

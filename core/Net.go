@@ -52,7 +52,7 @@ func CreateNetwork(inputCount int, outputCount int, hiddenLayers int, hiddenLaye
 }
 
 // Predict takes a set of input data and generates a set of output values
-func (n NeuralNet) Predict(inputData []float64) []float64 {
+func (n *NeuralNet) Predict(inputData []float64) []float64 {
 	data, md, o := n.initMatrixes(inputData)
 
 	for i := 0; i < n.hiddenLayers+1; i++ {
@@ -81,7 +81,7 @@ func sigmoidPrime(value float64) float64 {
 }
 
 // backProp is a function that is for one iteration of training using backpropagation
-func (n NeuralNet) backProp(item TrainingItem) error {
+func (n *NeuralNet) backProp(item TrainingItem) error {
 	// Check training item matches network
 	if n.inputCount != len(item.inputData) {
 		return fmt.Errorf("Input dimension for training data doesn't match network's")
@@ -142,8 +142,8 @@ func (n NeuralNet) backProp(item TrainingItem) error {
 	return nil
 }
 
-// Train is a function that trains the network given a set of training data
-func (n NeuralNet) Train(trainingData []TrainingItem) error {
+// TrainMultiple is a function that trains the network given a set of training data
+func (n *NeuralNet) TrainMultiple(trainingData []TrainingItem) error {
 	for i := 0; i < len(trainingData); i++ {
 		err := n.backProp(trainingData[i])
 
