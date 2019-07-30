@@ -13,12 +13,13 @@ import (
 // This file stores some of the helper functions for the NeuralNetwork struct
 
 // The function sets up the arrays for the forward propagation process
-func (n NeuralNet) initMatrixes(inputData []float64) (*mat.Dense, *mat.Dense, *mat.Dense) {
-	data := mat.NewDense(n.inputCount, 1, inputData)
-	md := mat.NewDense(n.hiddenLayerSize, 1, nil)
-	o := mat.NewDense(n.outputCount, 1, nil)
+func (n NeuralNet) initMatrixes(inputData []float64) (*mat.VecDense, *mat.VecDense, *mat.VecDense) {
+	inpData := mat.NewVecDense(n.inputCount, inputData)
 
-	return data, md, o
+	md := mat.NewVecDense(n.hiddenLayerSize, 1, nil)
+	o := mat.NewVecDense(n.outputCount, 1, nil)
+
+	return inpData, md, o
 }
 
 // executeLayer is a function that executes a layer of the neural network
@@ -36,10 +37,10 @@ func (n NeuralNet) initMatrixes(inputData []float64) (*mat.Dense, *mat.Dense, *m
 // 0 - n.hiddenLayers
 func (n NeuralNet) executeLayer(
 	layerNum int,
-	inputData *mat.Dense,
-	middleDataInput *mat.Dense,
-	middleDataOutput *mat.Dense,
-	outputData *mat.Dense,
+	inputData *mat.VecDense,
+	middleDataInput *mat.VecDense,
+	middleDataOutput *mat.VecDense,
+	outputData *mat.VecDense,
 ) {
 	if layerNum == n.hiddenLayers {
 		// It's the last step in the prop so use o

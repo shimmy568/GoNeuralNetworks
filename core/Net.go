@@ -52,7 +52,7 @@ func CreateNetwork(inputCount int, outputCount int, hiddenLayers int, hiddenLaye
 }
 
 // Predict takes a set of input data and generates a set of output values
-func (n *NeuralNet) Predict(inputData []float64) []float64 {
+func (n *NeuralNet) Predict(inputData []float64) *mat.VecDense {
 	data, md, o := n.initMatrixes(inputData)
 
 	for i := 0; i < n.hiddenLayers+1; i++ {
@@ -62,9 +62,9 @@ func (n *NeuralNet) Predict(inputData []float64) []float64 {
 	}
 
 	// Copy output data to an array
-	output := make([]float64, n.outputCount)
+	output := mat.NewVecDense(n.outputCount, nil)
 	for i := 0; i < n.outputCount; i++ {
-		output[i] = o.At(i, 0)
+		output.SetVec(i, o.At(i, 0))
 	}
 
 	return output
@@ -96,7 +96,7 @@ func (n *NeuralNet) backProp(item TrainingItem) error {
 	// Find error from expected value
 	err := mat.NewDense(n.outputCount, 1, nil)
 	for i := 0; i < n.outputCount; i++ {
-		err.Set(i, 0, res[i]-item.expectedOutput[i])
+		err.Set(i, 0, res.At(i)-item.expectedOutput[i])
 	}
 
 	// Run the errors in reverse and place the final values in firstLayerError for use in backprop

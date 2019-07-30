@@ -6,8 +6,8 @@ import (
 
 // TrainingItem is a struct that represents on set of training data
 type TrainingItem struct {
-	inputData      *mat.VecDense
-	expectedOutput *mat.VecDense
+	inputData      []float64
+	expectedOutput []float64
 }
 
 // CreateTrainingItem creates a training item struct given the data as input
