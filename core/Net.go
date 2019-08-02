@@ -96,7 +96,7 @@ func (n *NeuralNet) backProp(item TrainingItem) error {
 	// Find error from expected value
 	err := mat.NewDense(n.outputCount, 1, nil)
 	for i := 0; i < n.outputCount; i++ {
-		err.Set(i, 0, res.At(i)-item.expectedOutput[i])
+		err.Set(i, 0, res.AtVec(i)-item.expectedOutput[i])
 	}
 
 	// Run the errors in reverse and place the final values in firstLayerError for use in backprop

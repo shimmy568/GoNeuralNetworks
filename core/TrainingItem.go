@@ -12,10 +12,14 @@ type TrainingItem struct {
 
 // CreateTrainingItem creates a training item struct given the data as input
 func CreateTrainingItem(inputData *mat.VecDense, expectedData *mat.VecDense) (output *TrainingItem) {
+	// Create new arrays
+	tmpInput := make([]float64, inputData.Len())
+	tmpExpected := make([]float64, expectedData.Len())
+
 	// Create the training item struct
 	output = &TrainingItem{
-		inputData:      inputData,
-		expectedOutput: expectedData,
+		inputData:      tmpInput,
+		expectedOutput: tmpExpected,
 	}
 
 	return output

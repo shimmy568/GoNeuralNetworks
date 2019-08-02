@@ -13,11 +13,11 @@ import (
 // This file stores some of the helper functions for the NeuralNetwork struct
 
 // The function sets up the arrays for the forward propagation process
-func (n NeuralNet) initMatrixes(inputData []float64) (*mat.VecDense, *mat.VecDense, *mat.VecDense) {
-	inpData := mat.NewVecDense(n.inputCount, inputData)
+func (n NeuralNet) initMatrixes(inputData []float64) (*mat.Dense, *mat.Dense, *mat.Dense) {
+	inpData := mat.NewDense(n.inputCount, 1, inputData)
 
-	md := mat.NewVecDense(n.hiddenLayerSize, 1, nil)
-	o := mat.NewVecDense(n.outputCount, 1, nil)
+	md := mat.NewDense(n.hiddenLayerSize, 1, nil)
+	o := mat.NewDense(n.outputCount, 1, nil)
 
 	return inpData, md, o
 }
@@ -37,15 +37,17 @@ func (n NeuralNet) initMatrixes(inputData []float64) (*mat.VecDense, *mat.VecDen
 // 0 - n.hiddenLayers
 func (n NeuralNet) executeLayer(
 	layerNum int,
-	inputData *mat.VecDense,
-	middleDataInput *mat.VecDense,
-	middleDataOutput *mat.VecDense,
-	outputData *mat.VecDense,
+	inputData *mat.Dense,
+	middleDataInput *mat.Dense,
+	middleDataOutput *mat.Dense,
+	outputData *mat.Dense,
 ) {
+	// Create temp dense to store data in
+
 	if layerNum == n.hiddenLayers {
 		// It's the last step in the prop so use o
-		outputData.Product(n.weights[layerNum], middleDataInput) // Do matrix mult step
-		outputData.Apply(sigmoidWrapper, outputData)             // Do sigmoid step
+		outputData.Product(n.weights[layerNum], middleDataInput.T()) // Do matrix mult step
+		outputData.Apply(sigmoidWrapper, outputData)                 // Do sigmoid step
 	} else if layerNum == 0 {
 		// First pass so use md to store and data as input
 		middleDataOutput.Product(n.weights[layerNum], inputData) // Do matrix mult step
