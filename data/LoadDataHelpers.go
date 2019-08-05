@@ -53,7 +53,17 @@ func SegmentDataSet(paths []string, ratio float64) (pathsA []string, pathsB []st
 
 	// Randomly select lenPathsA indices and keep track of them in a set so we can add them to A
 	for i := 0; i < lenPathsA; i++ {
-		indexToPick := int(r.Float64() * float64(len(paths)))
+		indexToPick := -1
+
+		// Keep picking random indices until you find a new one
+		for true {
+			indexToPick = int(r.Float64() * float64(len(paths)))
+			if _, ok := indices[indexToPick]; !ok {
+				break
+			}
+		}
+
+		// Add the new index to the map
 		indices[indexToPick] = true
 	}
 
@@ -74,4 +84,16 @@ func SegmentDataSet(paths []string, ratio float64) (pathsA []string, pathsB []st
 	}
 
 	return pathsA, pathsB, nil
+}
+
+// PrefixStringArray takes an array of strings and applies a prefix string to all contained strings
+func PrefixStringArray(strs []string, prefix string) []string {
+	// Create output array
+	outputData := make([]string, len(strs))
+
+	for i := 0; i < len(strs); i++ {
+		outputData[i] = prefix + strs[i]
+	}
+
+	return outputData
 }

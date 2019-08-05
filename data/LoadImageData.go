@@ -3,6 +3,7 @@ package data
 
 import (
 	"image"
+	"image/png"
 	"os"
 )
 
@@ -11,16 +12,20 @@ import (
 // LoadMonochromeImages loads multiple images into MonochromeImageData structs
 func LoadMonochromeImages(paths []string) ([]*MonochromeImageData, error) {
 	output := make([]*MonochromeImageData, len(paths)) // Create output data array
+	loadingChan := make(chan int, len(paths))
+	errChan := make(chan error, len(paths))
 
 	for i := 0; i < len(paths); i++ {
-		// Load an image and check for errors
-		img, err := LoadMonochromeImage(paths[i])
-		if err != nil {
-			return nil, err
-		}
+		go func() {
+			// Load an image and check for errors
+			img, err := LoadMonochromeImage(paths[i])
+			if err != nil {
+				return nil, err
+			}
 
-		// Load the img data into the output array
-		output[i] = img
+			// Load the img data into the output array
+			output[i] = img
+		}()
 	}
 
 	return output, nil
@@ -54,7 +59,7 @@ func loadImageDataFromFile(path string) (image.Image, error) {
 
 	// Decode the image file into the image object
 	// Decode will figure out what type of image is in the file on its own.
-	src, _, err := image.Decode(inputFile)
+	src, err := png.Decode(inputFile)
 	if err != nil {
 		return nil, err
 	}

@@ -52,8 +52,12 @@ func CreateNetwork(inputCount int, outputCount int, hiddenLayers int, hiddenLaye
 }
 
 // Predict takes a set of input data and generates a set of output values
-func (n *NeuralNet) Predict(inputData []float64) *mat.VecDense {
-	data, md, o := n.initMatrixes(inputData)
+func (n *NeuralNet) Predict(inputData []float64) (*mat.VecDense, error) {
+	// Create matrices and check for error
+	data, md, o, err := n.initMatrixes(inputData)
+	if err != nil {
+		return nil, err
+	}
 
 	for i := 0; i < n.hiddenLayers+1; i++ {
 		// Just use md as input and output since it doesn't matter for this useage
@@ -67,7 +71,7 @@ func (n *NeuralNet) Predict(inputData []float64) *mat.VecDense {
 		output.SetVec(i, o.At(i, 0))
 	}
 
-	return output
+	return output, nil
 }
 
 // The inverse of the sigmoid function
@@ -91,17 +95,23 @@ func (n *NeuralNet) backProp(item TrainingItem) error {
 	}
 
 	// Run forward pass for network
-	res := n.Predict(item.inputData)
+	res, err := n.Predict(item.inputData)
+	if err != nil {
+		return err
+	}
 
 	// Find error from expected value
-	err := mat.NewDense(n.outputCount, 1, nil)
+	layerError := mat.NewDense(n.outputCount, 1, nil)
 	for i := 0; i < n.outputCount; i++ {
-		err.Set(i, 0, res.AtVec(i)-item.expectedOutput[i])
+		layerError.Set(i, 0, res.AtVec(i)-item.expectedOutput[i])
 	}
 
 	// Run the errors in reverse and place the final values in firstLayerError for use in backprop
-	_, firstLayerError, _ := n.initMatrixes(item.inputData)
-	n.executeLayerReverse(n.hiddenLayers-1, nil, nil, firstLayerError, err) // Execute the last layer in reverse
+	_, firstLayerError, _, err := n.initMatrixes(item.inputData)
+	if err != nil {
+		return err
+	}
+	n.executeLayerReverse(n.hiddenLayers-1, nil, nil, firstLayerError, layerError) // Execute the last layer in reverse
 
 	for i := n.hiddenLayers - 2; i > 0; i-- { // Don't execute the last and first layers of the network
 		n.executeLayerReverse(i, nil, firstLayerError, firstLayerError, nil) // Execute the layer of the network in reverse
@@ -109,7 +119,10 @@ func (n *NeuralNet) backProp(item TrainingItem) error {
 
 	// mdi is middle layer input mdo is middle layer output since we need to keep track of both
 	// for the backprop process
-	data, mdi, o := n.initMatrixes(item.inputData)
+	data, mdi, o, err := n.initMatrixes(item.inputData)
+	if err != nil {
+		return err
+	}
 	mdo := mat.DenseCopyOf(mdi)
 
 	// creating temp mats that are used in backprop math

@@ -13,13 +13,18 @@ import (
 // This file stores some of the helper functions for the NeuralNetwork struct
 
 // The function sets up the arrays for the forward propagation process
-func (n NeuralNet) initMatrixes(inputData []float64) (*mat.Dense, *mat.Dense, *mat.Dense) {
-	inpData := mat.NewDense(n.inputCount, 1, inputData)
+func (n NeuralNet) initMatrixes(inpData []float64) (inputData *mat.Dense, middleData *mat.Dense, outputData *mat.Dense, err error) {
+	// Check that input data is right length
+	if len(inpData) != n.inputCount {
+		return nil, nil, nil, errors.New("input data is incorrect length for network")
+	}
 
-	md := mat.NewDense(n.hiddenLayerSize, 1, nil)
-	o := mat.NewDense(n.outputCount, 1, nil)
+	inputData = mat.NewDense(n.inputCount, 1, inpData)
 
-	return inpData, md, o
+	middleData = mat.NewDense(n.hiddenLayerSize, 1, nil)
+	outputData = mat.NewDense(n.outputCount, 1, nil)
+
+	return inputData, middleData, outputData, nil
 }
 
 // executeLayer is a function that executes a layer of the neural network
