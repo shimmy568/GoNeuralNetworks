@@ -2,33 +2,67 @@
 package data
 
 import (
+	"fmt"
 	"image"
 	"image/png"
 	"os"
 )
 
-// This file is responsable for loading the image data into an image struct
+const maxOpenFiles = 25
 
 // LoadMonochromeImages loads multiple images into MonochromeImageData structs
 func LoadMonochromeImages(paths []string) ([]*MonochromeImageData, error) {
 	output := make([]*MonochromeImageData, len(paths)) // Create output data array
-	loadingChan := make(chan int, len(paths))
-	errChan := make(chan error, len(paths))
 
-	for i := 0; i < len(paths); i++ {
-		go func() {
-			// Load an image and check for errors
-			img, err := LoadMonochromeImage(paths[i])
-			if err != nil {
-				return nil, err
-			}
+	quit := make(chan bool)
+	errc := make(chan error)
+	done := make(chan error)
 
-			// Load the img data into the output array
-			output[i] = img
-		}()
+	active := make(chan bool, maxOpenFiles) // Limit the number of goroutines loading files
+	for i := 0; i < maxOpenFiles; i++ {     // Fill the buffered channel
+		active <- true
 	}
 
-	return output, nil
+	for i := 0; i < len(paths); i++ {
+		<-active // Limit the number of goroutines loading files
+		go func(iter int) {
+			// Load an image and check for errors
+			img, err := LoadMonochromeImage(paths[iter])
+			active <- true // Allow new goroutine to be created
+
+			// Set up return chan depending on if image load errored
+			ch := done
+			if err != nil {
+				ch = errc
+			} else {
+				// Load the img data into the output array if function did not error
+				fmt.Printf("Loaded image: %d/%d\n", iter, len(paths))
+				output[iter] = img // Copy image into output array
+			}
+
+			// Return error/done or quit
+			select {
+			case ch <- err:
+				return
+			case <-quit:
+				return
+			}
+		}(i)
+	}
+
+	count := 0
+	for {
+		select {
+		case err := <-errc: // If an error is thrown return now
+			close(quit)
+			return nil, err
+		case <-done: // When a goroutine is done increment the counter until all threads are exited
+			count++
+			if count == len(paths) {
+				return output, nil // got all N signals, so there was no error
+			}
+		}
+	}
 }
 
 // LoadMonochromeImage loads an image into a MonochromeImageData given a path to the image
