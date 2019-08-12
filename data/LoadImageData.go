@@ -2,6 +2,7 @@
 package data
 
 import (
+	"github.com/nfnt/resize"
 	"fmt"
 	"image"
 	"image/png"
@@ -11,7 +12,8 @@ import (
 const maxOpenFiles = 25
 
 // LoadMonochromeImages loads multiple images into MonochromeImageData structs
-func LoadMonochromeImages(paths []string) ([]*MonochromeImageData, error) {
+// Provide a width and a height to make the loader resize the images to the given dims
+func LoadMonochromeImages(paths []string, width int, height int) ([]*MonochromeImageData, error) {
 	output := make([]*MonochromeImageData, len(paths)) // Create output data array
 
 	quit := make(chan bool)
@@ -27,8 +29,7 @@ func LoadMonochromeImages(paths []string) ([]*MonochromeImageData, error) {
 		<-active // Limit the number of goroutines loading files
 		go func(iter int) {
 			// Load an image and check for errors
-			img, err := LoadMonochromeImage(paths[iter])
-			active <- true // Allow new goroutine to be created
+			img, err := LoadMonochromeImage(paths[iter], width, height, active)
 
 			// Set up return chan depending on if image load errored
 			ch := done
@@ -66,9 +67,9 @@ func LoadMonochromeImages(paths []string) ([]*MonochromeImageData, error) {
 }
 
 // LoadMonochromeImage loads an image into a MonochromeImageData given a path to the image
-func LoadMonochromeImage(path string) (*MonochromeImageData, error) {
+func LoadMonochromeImage(path string, width int, height int, syncChan chan bool) (*MonochromeImageData, error) {
 	// Load image from file and check for error
-	img, err := loadImageDataFromFile(path)
+	img, err := loadImageDataFromFile(path, width, height, syncChan)
 	if err != nil {
 		return nil, err
 	}
@@ -83,19 +84,44 @@ func LoadMonochromeImage(path string) (*MonochromeImageData, error) {
 	return obj, nil
 }
 
-func loadImageDataFromFile(path string) (image.Image, error) {
+// loadImageDataFromFile loads an image from a file and scales it to a provided set of dimensions
+// 	path: The path that the image should be loaded from
+// 	width: The width that the image will be scaled to
+// 	height: The height that the image will be scales to
+// 	syncChan: A channel that will be sent true when the image is done loading. (used to prevent the code from having too many open files)
+func loadImageDataFromFile(path string, width int, height int, syncChan chan bool) (image.Image, error) {
 	// Load file and handle errors
 	inputFile, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer inputFile.Close()
+	
 
 	// Decode the image file into the image object
 	// Decode will figure out what type of image is in the file on its own.
 	src, err := png.Decode(inputFile)
 	if err != nil {
 		return nil, err
+	}
+	inputFile.Close()
+	syncChan <- true
+
+	// Scale the image
+	if width >= 0 || height >= 0 { // Check if the image needs to be scaled
+		// Find new dimensions the image needs to be scaled to
+		newWidth := uint(src.Bounds().Dx())
+		newHeight := uint(src.Bounds().Dy())
+
+		if width >= 0 {
+			newWidth = uint(width)
+		}
+
+		if height >= 0 {
+			newHeight = uint(height)
+		}
+
+		// Do the actual scaling part
+		src = resize.Resize(newWidth, newHeight, src, resize.Lanczos3)
 	}
 
 	return src, nil

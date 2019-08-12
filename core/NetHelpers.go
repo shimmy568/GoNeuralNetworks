@@ -90,6 +90,7 @@ func (n NeuralNet) executeLayerReverse(
 
 // generateWeights generates a random set of weights for the creation of the network
 func generateWeights(sizeX int, sizeY int) []float64 {
+	fmt.Println(sizeX * sizeY)
 	data := make([]float64, sizeX*sizeY)
 	for i := 0; i < sizeX*sizeY; i++ {
 		data[i] = rand.NormFloat64()
