@@ -170,9 +170,10 @@ func (n *NeuralNet) TrainMonnochromeImage(image *data.MonochromeImageData, expec
 	}
 
 	// Turn matrix into vector and turn into training item struct
-	_ = CreateTrainingItem(vectorizeMatrix(imageMat), expectedOutput)
+	item := CreateTrainingItem(vectorizeMatrix(imageMat), expectedOutput)
 
 	// Train network with vector
+	n.backProp(item)
 
 	return nil
 }

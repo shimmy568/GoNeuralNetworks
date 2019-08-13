@@ -85,7 +85,7 @@ func sigmoidPrime(value float64) float64 {
 }
 
 // backProp is a function that is for one iteration of training using backpropagation
-func (n *NeuralNet) backProp(item TrainingItem) error {
+func (n *NeuralNet) backProp(item *TrainingItem) error {
 	// Check training item matches network
 	if n.inputCount != len(item.inputData) {
 		return fmt.Errorf("Input dimension for training data doesn't match network's")
@@ -156,7 +156,7 @@ func (n *NeuralNet) backProp(item TrainingItem) error {
 }
 
 // TrainMultiple is a function that trains the network given a set of training data
-func (n *NeuralNet) TrainMultiple(trainingData []TrainingItem) error {
+func (n *NeuralNet) TrainMultiple(trainingData []*TrainingItem) error {
 	for i := 0; i < len(trainingData); i++ {
 		err := n.backProp(trainingData[i])
 

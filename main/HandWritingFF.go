@@ -71,9 +71,12 @@ func runHandwritingFF() {
 
 	imageWidth := trainingImages[0].Width
 	imageHeight := trainingImages[0].Height
-	network := core.CreateNetwork(imageHeight*imageHeight, 10, 1, imageHeight*imageWidth, 0.05)
+	network := core.CreateNetwork(imageWidth*imageHeight, 10, 1, imageWidth*imageHeight, 0.05)
 	for i := 0; i < len(trainingImages); i++ {
-		network.TrainMonnochromeImage(trainingImages[i], trainingSetExpectedData[i])
+		err := network.TrainMonnochromeImage(trainingImages[i], trainingSetExpectedData[i])
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Test network on dataset to check trained accuracy
