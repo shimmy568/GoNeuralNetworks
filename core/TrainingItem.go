@@ -16,6 +16,16 @@ func CreateTrainingItem(inputData *mat.VecDense, expectedData *mat.VecDense) (ou
 	tmpInput := make([]float64, inputData.Len())
 	tmpExpected := make([]float64, expectedData.Len())
 
+	// Copy input data to tmpInput
+	for i := 0; i < inputData.Len(); i++ {
+		tmpInput[i] = inputData.AtVec(i)
+	}
+
+	// Copy expected data to tmpExpected
+	for i := 0; i < expectedData.Len(); i++ {
+		tmpExpected[i] = expectedData.AtVec(i)
+	}
+
 	// Create the training item struct
 	output = &TrainingItem{
 		inputData:      tmpInput,

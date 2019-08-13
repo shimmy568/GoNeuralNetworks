@@ -8,12 +8,16 @@ import (
 	"strconv"
 	"strings"
 
+	"gonum.org/v1/gonum/mat"
+
+	"github.com/shimmy568/NGin/core"
 	"github.com/shimmy568/NGin/data"
 )
 
 // This file is for holding the logic associated with having
 
 func runHandwritingFF() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	// TODO Implement pseudo code
 
 	// Get list of images to load from disk
@@ -39,13 +43,17 @@ func runHandwritingFF() {
 		log.Fatal(err)
 	}
 
+	// Generate the expected vectors for each label for testing and training
+	trainingSetExpectedData := generateExpectedOutputFromLables(trainingSetLabels)
+	// testingSetExpectedData := generateExpectedOutputFromLables(testingSetLabels)
+
 	// Load images from disk
-	trainingImages, err := data.LoadMonochromeImages(trainingSet, 64, 64)
+	trainingImages, err := data.LoadMonochromeImages(trainingSet, 88, 66)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	testingImages, err := data.LoadMonochromeImages(testingSet, 64, 64)
+	testingImages, err := data.LoadMonochromeImages(testingSet, 88, 66)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,16 +69,40 @@ func runHandwritingFF() {
 	fmt.Printf("Number of labels in training set: %d\n", len(trainingSetLabels))
 	fmt.Printf("Number of labels in training set: %d\n", len(testingSetLabels))
 
-	/* // Train network for the dataset
 	imageWidth := trainingImages[0].Width
 	imageHeight := trainingImages[0].Height
-	core.CreateNetwork(imageHeight*imageHeight, 10, 1, imageHeight*imageWidth, 0.05)
+	network := core.CreateNetwork(imageHeight*imageHeight, 10, 1, imageHeight*imageWidth, 0.05)
 	for i := 0; i < len(trainingImages); i++ {
-		// TODO
-		// n.TrainMonnochromeImage(trainingImages[i])
-	} */
+		network.TrainMonnochromeImage(trainingImages[i], trainingSetExpectedData[i])
+	}
 
 	// Test network on dataset to check trained accuracy
+	gotRight := 0
+	for i := 0; i < len(testingImages); i++ {
+		result, err := network.PredictMonochromeImage(testingImages[i])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Find the index with the highest output
+		maxIndex := -1
+		for o := 0; o < result.Len(); i++ {
+			if maxIndex == -1 {
+
+			} else {
+				if result.AtVec(maxIndex) < result.AtVec(o) {
+					maxIndex = o
+				}
+			}
+		}
+
+		// Check if the network predicted correctly
+		if maxIndex == testingSetLabels[i] {
+			gotRight++
+		}
+	}
+
+	fmt.Printf("Correctness: %d\n", gotRight/len(testingImages))
 }
 
 func filterAndLabelData(paths []string) (labels []int, filteredPaths []string, err error) {
@@ -94,6 +126,17 @@ func filterAndLabelData(paths []string) (labels []int, filteredPaths []string, e
 	}
 
 	return labels, filteredPaths, nil
+}
+
+// generateExpectedOutputFromLables creates the expected output vector from what number the label is
+func generateExpectedOutputFromLables(labels []int) (expectedOutputs []*mat.VecDense) {
+	for i := 0; i < len(labels); i++ {
+		tmp := make([]float64, 10)                                          // Create array that will hold the data temperatorly
+		tmp[labels[i]] = 1                                                  // Set the corresponding numbers index to 1
+		expectedOutputs = append(expectedOutputs, mat.NewVecDense(10, tmp)) // Create the vec dense from the tmp array and append it to output list
+	}
+
+	return expectedOutputs
 }
 
 func printStrArray(arr []string) {

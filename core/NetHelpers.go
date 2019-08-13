@@ -90,7 +90,6 @@ func (n NeuralNet) executeLayerReverse(
 
 // generateWeights generates a random set of weights for the creation of the network
 func generateWeights(sizeX int, sizeY int) []float64 {
-	fmt.Println(sizeX * sizeY)
 	data := make([]float64, sizeX*sizeY)
 	for i := 0; i < sizeX*sizeY; i++ {
 		data[i] = rand.NormFloat64()
@@ -157,7 +156,7 @@ func vectorizeMatrix(matrix *mat.Dense) *mat.VecDense {
 }
 
 // TrainMonnochromeImage trains a neural network
-func (n *NeuralNet) TrainMonnochromeImage(image data.MonochromeImageData, expectedOutput *mat.VecDense) (err error) {
+func (n *NeuralNet) TrainMonnochromeImage(image *data.MonochromeImageData, expectedOutput *mat.VecDense) (err error) {
 	// Check that the image is the right size
 	imageMat := image.GetDense()
 	imageWidth, imageHeight := imageMat.Dims()
@@ -176,4 +175,24 @@ func (n *NeuralNet) TrainMonnochromeImage(image data.MonochromeImageData, expect
 	// Train network with vector
 
 	return nil
+}
+
+// PredictMonochromeImage predicts an output using a network given an image
+func (n *NeuralNet) PredictMonochromeImage(image *data.MonochromeImageData) (output *mat.VecDense, err error) {
+	// Check that the image is the right size
+	imageMat := image.GetDense()
+	imageWidth, imageHeight := imageMat.Dims()
+	if imageWidth*imageHeight != n.inputCount {
+		return nil, errors.New("input image is incorrect size for number of input nodes in the network")
+	}
+
+	vecData := vectorizeMatrix(image.GetDense())
+
+	// Copy vector to float array
+	arrayData := make([]float64, vecData.Len())
+	for i := 0; i < vecData.Len(); i++ {
+		arrayData[i] = vecData.AtVec(i)
+	}
+
+	return n.Predict(arrayData)
 }
