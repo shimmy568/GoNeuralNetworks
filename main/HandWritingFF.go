@@ -10,8 +10,8 @@ import (
 
 	"gonum.org/v1/gonum/mat"
 
-	"github.com/shimmy568/NGin/core"
-	"github.com/shimmy568/NGin/data"
+	"github.com/shimmy568/GoNeuralNetworks/core"
+	"github.com/shimmy568/GoNeuralNetworks/data"
 )
 
 // This file is for holding the logic associated with having

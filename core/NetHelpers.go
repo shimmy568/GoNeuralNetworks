@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/shimmy568/NGin/data"
+	"github.com/shimmy568/GoNeuralNetworks/data"
 
 	"gonum.org/v1/gonum/mat"
 )

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/shimmy568/NGin/util"
+	"github.com/shimmy568/GoNeuralNetworks/util"
 )
 
 // This file holds any helper functions that are used in the process of loading data
