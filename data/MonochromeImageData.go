@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 
@@ -19,15 +20,15 @@ type MonochromeImageData struct {
 }
 
 // createMonochromeImageData creates a blank new MonochromeImageData struct
-func createMonochromeImageData(rows, cols int) *MonochromeImageData {
+func createMonochromeImageData(cols, rows int) *MonochromeImageData {
 	// Create the struct and initialize the static fields
 	obj := &MonochromeImageData{
-		Width:  rows,
-		Height: cols,
+		Width:  cols,
+		Height: rows,
 	}
 
 	// Set up the data field
-	rect := image.Rect(0, 0, rows, cols)
+	rect := image.Rect(0, 0, cols, rows)
 	obj.data = image.NewGray(rect)
 
 	return obj
@@ -39,7 +40,7 @@ func (m *MonochromeImageData) loadImageData(img image.Image) {
 	for col := 0; col < m.Width; col++ {
 		for row := 0; row < m.Height; row++ {
 			// Convert color to gray and update to struct data
-			oldColor := img.At(row, col)
+			oldColor := img.At(col, row)
 			grayColor := color.GrayModel.Convert(oldColor)
 			m.data.Set(col, row, grayColor)
 		}
@@ -49,14 +50,17 @@ func (m *MonochromeImageData) loadImageData(img image.Image) {
 // GetDense returns a matrix representation of the internal data
 func (m *MonochromeImageData) GetDense() *mat.Dense {
 	// Create the mat for the data to be entered into
-	data := mat.NewDense(m.Width, m.Height, nil)
+	data := mat.NewDense(m.Height, m.Width, nil)
+
+	imgWidth, imgHeight := m.data.Bounds().Dx(), m.data.Bounds().Dy()
+	fmt.Printf("Image Width: %d, Image Height: %d, Data Width: %d, Data Height: %d\n", imgWidth, imgHeight, m.Width, m.Height)
 
 	// Loop through all the pixels in the image
 	for col := 0; col < m.Width; col++ {
 		for row := 0; row < m.Height; row++ {
 			// Convert the pixel color data to a brightness level and return it
 			pixelColor := m.data.At(col, row)
-			data.Set(col, row, getPixelBrightnessLevel(pixelColor))
+			data.Set(row, col, getPixelBrightnessLevel(pixelColor))
 		}
 	}
 

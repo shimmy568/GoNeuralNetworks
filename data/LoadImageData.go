@@ -2,11 +2,12 @@
 package data
 
 import (
-	"github.com/nfnt/resize"
 	"fmt"
 	"image"
 	"image/png"
 	"os"
+
+	"github.com/nfnt/resize"
 )
 
 const maxOpenFiles = 25
@@ -75,9 +76,8 @@ func LoadMonochromeImage(path string, width int, height int, syncChan chan bool)
 	}
 
 	// Create the MonochromeImageData struct and add the data to it
-	bounds := img.Bounds()
-	rows, cols := bounds.Max.X, bounds.Max.Y
-	obj := createMonochromeImageData(rows, cols)
+	cols, rows := img.Bounds().Dx(), img.Bounds().Dy()
+	obj := createMonochromeImageData(cols, rows)
 	obj.loadImageData(img)
 
 	//return struct
@@ -95,7 +95,6 @@ func loadImageDataFromFile(path string, width int, height int, syncChan chan boo
 	if err != nil {
 		return nil, err
 	}
-	
 
 	// Decode the image file into the image object
 	// Decode will figure out what type of image is in the file on its own.

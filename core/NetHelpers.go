@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 
 	"github.com/shimmy568/NGin/data"
@@ -51,8 +50,8 @@ func (n NeuralNet) executeLayer(
 
 	if layerNum == n.hiddenLayers {
 		// It's the last step in the prop so use o
-		outputData.Product(n.weights[layerNum], middleDataInput.T()) // Do matrix mult step
-		outputData.Apply(sigmoidWrapper, outputData)                 // Do sigmoid step
+		outputData.Product(n.weights[layerNum], middleDataInput) // Do matrix mult step
+		outputData.Apply(sigmoidWrapper, outputData)             // Do sigmoid step
 	} else if layerNum == 0 {
 		// First pass so use md to store and data as input
 		middleDataOutput.Product(n.weights[layerNum], inputData) // Do matrix mult step
@@ -113,12 +112,6 @@ func sigmoidInverseWrapper(row int, col int, value float64) float64 {
 	return sigmoidInverse(value)
 }
 
-// printMat prints a matrix to the console in a human readable way
-func printMat(data *mat.Dense) {
-	f := mat.Formatted(data, mat.Prefix("    "), mat.Squeeze())
-	fmt.Printf("mat:\na = % v\n\n", f)
-}
-
 // backPropIter is a function that does the process for a single iteration of backprop
 // ------------
 // 	layerIndex:	The index of the layer that we are adjusting the weights for
@@ -155,7 +148,7 @@ func vectorizeMatrix(matrix *mat.Dense) *mat.VecDense {
 	return output
 }
 
-// TrainMonnochromeImage trains a neural network
+// TrainMonochromeImage trains a neural network
 func (n *NeuralNet) TrainMonnochromeImage(image *data.MonochromeImageData, expectedOutput *mat.VecDense) (err error) {
 	// Check that the image is the right size
 	imageMat := image.GetDense()
@@ -165,7 +158,7 @@ func (n *NeuralNet) TrainMonnochromeImage(image *data.MonochromeImageData, expec
 	}
 
 	// Check that expectedOutput is right size
-	if expectedOutput.Len() == n.outputCount {
+	if expectedOutput.Len() != n.outputCount {
 		return errors.New("expected output is incorrect size for number of output nodes in the network")
 	}
 

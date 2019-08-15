@@ -111,9 +111,9 @@ func (n *NeuralNet) backProp(item *TrainingItem) error {
 	if err != nil {
 		return err
 	}
-	n.executeLayerReverse(n.hiddenLayers-1, nil, nil, firstLayerError, layerError) // Execute the last layer in reverse
+	n.executeLayerReverse(n.hiddenLayers, nil, nil, firstLayerError, layerError) // Execute the last layer in reverse
 
-	for i := n.hiddenLayers - 2; i > 0; i-- { // Don't execute the last and first layers of the network
+	for i := n.hiddenLayers - 1; i > 0; i-- { // Don't execute the last and first layers of the network
 		n.executeLayerReverse(i, nil, firstLayerError, firstLayerError, nil) // Execute the layer of the network in reverse
 	}
 

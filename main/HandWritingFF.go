@@ -72,7 +72,10 @@ func runHandwritingFF() {
 	imageWidth := trainingImages[0].Width
 	imageHeight := trainingImages[0].Height
 	network := core.CreateNetwork(imageWidth*imageHeight, 10, 1, imageWidth*imageHeight, 0.05)
+
+	// util.PrintDense(trainingImages[0].GetDense())
 	for i := 0; i < len(trainingImages); i++ {
+		fmt.Printf("Image #%d, OutputCount: %d\n", i, trainingSetExpectedData[i].Len())
 		err := network.TrainMonnochromeImage(trainingImages[i], trainingSetExpectedData[i])
 		if err != nil {
 			log.Fatal(err)
