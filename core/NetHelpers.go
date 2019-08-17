@@ -2,7 +2,8 @@ package core
 
 import (
 	"errors"
-	"math/rand"
+
+	"github.com/shimmy568/GoNeuralNetworks/util"
 
 	"github.com/shimmy568/GoNeuralNetworks/data"
 
@@ -50,15 +51,15 @@ func (n NeuralNet) executeLayer(
 
 	if layerNum == n.hiddenLayers {
 		// It's the last step in the prop so use o
-		outputData.Product(n.weights[layerNum], middleDataInput) // Do matrix mult step
+		outputData.Product(n.weights[layerNum], middleDataInput) // Do dot product step
 		outputData.Apply(sigmoidWrapper, outputData)             // Do sigmoid step
 	} else if layerNum == 0 {
 		// First pass so use md to store and data as input
-		middleDataOutput.Product(n.weights[layerNum], inputData) // Do matrix mult step
+		middleDataOutput.Product(n.weights[layerNum], inputData) // Do dot product step
 		middleDataOutput.Apply(sigmoidWrapper, middleDataOutput) // Do sigmoid step
 	} else {
 		// It's not the last step so use md
-		middleDataOutput.Product(n.weights[layerNum], middleDataInput) // Do matrix mult step
+		middleDataOutput.Product(n.weights[layerNum], middleDataInput) // Do dot product step
 		middleDataOutput.Apply(sigmoidWrapper, middleDataOutput)       // Do sigmoid step
 	}
 }
@@ -91,7 +92,7 @@ func (n NeuralNet) executeLayerReverse(
 func generateWeights(sizeX int, sizeY int) []float64 {
 	data := make([]float64, sizeX*sizeY)
 	for i := 0; i < sizeX*sizeY; i++ {
-		data[i] = rand.NormFloat64()
+		data[i] = util.GetRand().Float64()
 	}
 
 	return data
@@ -169,7 +170,7 @@ func (n *NeuralNet) TrainMonnochromeImage(image *data.MonochromeImageData, expec
 	item := CreateTrainingItem(vectorizeMatrix(imageMat), expectedOutput)
 
 	// Train network with vector
-	n.backProp(item)
+	n.Train(item)
 
 	return nil
 }

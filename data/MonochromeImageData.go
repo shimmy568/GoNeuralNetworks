@@ -60,6 +60,7 @@ func (m *MonochromeImageData) GetDense() *mat.Dense {
 		}
 	}
 
+	MakeDenseNormal(data) // Make the pixel data between 0-1
 	return data
 }
 

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"gonum.org/v1/gonum/mat"
+
 	"github.com/shimmy568/GoNeuralNetworks/util"
 )
 
@@ -96,4 +98,20 @@ func PrefixStringArray(strs []string, prefix string) []string {
 	}
 
 	return outputData
+}
+
+// MakeDenseNormal makes all the values in the matrix between 0 and 1 (inclusively)
+func MakeDenseNormal(matrix *mat.Dense) {
+	min := mat.Min(matrix)
+	max := mat.Max(matrix)
+
+	// Subtract min from all values
+	matrix.Apply(func(i, j int, value float64) float64 {
+		return value - min
+	}, matrix)
+
+	// Divide all values by max
+	matrix.Apply(func(i, j int, value float64) float64 {
+		return value / max
+	}, matrix)
 }

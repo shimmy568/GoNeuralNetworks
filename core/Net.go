@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/shimmy568/GoNeuralNetworks/util"
+
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -84,8 +86,8 @@ func sigmoidPrime(value float64) float64 {
 	return sigmoid(1 - sigmoid(value))
 }
 
-// backProp is a function that is for one iteration of training using backpropagation
-func (n *NeuralNet) backProp(item *TrainingItem) error {
+// Train is a function that is for one iteration of training using backpropagation
+func (n *NeuralNet) Train(item *TrainingItem) error {
 	// Check training item matches network
 	if n.inputCount != len(item.inputData) {
 		return fmt.Errorf("Input dimension for training data doesn't match network's")
@@ -103,8 +105,11 @@ func (n *NeuralNet) backProp(item *TrainingItem) error {
 	// Find error from expected value
 	layerError := mat.NewDense(n.outputCount, 1, nil)
 	for i := 0; i < n.outputCount; i++ {
+		fmt.Printf("a: %f, b: %f\n", res.AtVec(i), item.expectedOutput[i])
 		layerError.Set(i, 0, res.AtVec(i)-item.expectedOutput[i])
 	}
+
+	util.PrintDense(layerError)
 
 	// Run the errors in reverse and place the final values in firstLayerError for use in backprop
 	_, firstLayerError, _, err := n.initMatrixes(item.inputData)
@@ -158,7 +163,7 @@ func (n *NeuralNet) backProp(item *TrainingItem) error {
 // TrainMultiple is a function that trains the network given a set of training data
 func (n *NeuralNet) TrainMultiple(trainingData []*TrainingItem) error {
 	for i := 0; i < len(trainingData); i++ {
-		err := n.backProp(trainingData[i])
+		err := n.Train(trainingData[i])
 
 		if err != nil {
 			return err
