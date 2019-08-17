@@ -73,17 +73,17 @@ func (n NeuralNet) executeLayerReverse(
 	outputData *mat.Dense,
 ) {
 	if layerNum == n.hiddenLayers {
-		// It's the last step in the prop so use o
-		outputData.Product(n.weights[layerNum], middleDataInput) // Do matrix mult step
-		outputData.Apply(sigmoidInverseWrapper, outputData)      // Do sigmoid step
+		// Executing the last layer in reverse. So move the data from outputData to middleDataOutput
+		middleDataOutput.Product(n.weights[layerNum].T(), outputData)   // Do matrix mult step
+		middleDataOutput.Apply(sigmoidInverseWrapper, middleDataOutput) // Do sigmoid step
 	} else if layerNum == 0 {
-		// First pass so use md to store and data as input
-		middleDataOutput.Product(n.weights[layerNum], inputData)        // Do matrix mult step
-		middleDataOutput.Apply(sigmoidInverseWrapper, middleDataOutput) // Do sigmoid step
+		// First pass in reverse
+		inputData.Product(n.weights[layerNum].T(), middleDataInput) // Do matrix mult step
+		inputData.Apply(sigmoidInverseWrapper, inputData)           // Do sigmoid step
 	} else {
-		// It's not the last step so use md
-		middleDataOutput.Product(n.weights[layerNum], middleDataInput)  // Do matrix mult step
-		middleDataOutput.Apply(sigmoidInverseWrapper, middleDataOutput) // Do sigmoid step
+		// Middle layers so move the data from middleDataOutput to middleDataInput
+		middleDataInput.Product(n.weights[layerNum].T(), middleDataOutput) // Do matrix mult step
+		middleDataInput.Apply(sigmoidInverseWrapper, middleDataInput)      // Do sigmoid step
 	}
 }
 
@@ -121,14 +121,17 @@ func sigmoidInverseWrapper(row int, col int, value float64) float64 {
 // ------------
 // This function will change the weights of the neural network but shouldn't have any extra side effects
 func (n NeuralNet) backPropIter(layerIndex int, inputInfo *mat.Dense, outputInfo *mat.Dense, layerErr *mat.Dense) {
-	tmp := mat.NewDense(n.hiddenLayerSize, n.hiddenLayerSize, nil) // Create tmp mat for calculations
-	outputCopy := mat.DenseCopyOf(outputInfo)                      // Copy mdo into tmp matrix
-	inputCopy := mat.DenseCopyOf(inputInfo)                        // Copy mdi into tmp matrix
-	outputCopy.Apply(sigmoidPrimeWrapper, outputCopy)              // Apply sigmoid prime to mdo
-	tmp.Mul(layerErr, outputCopy)                                  // Multiply layer error and mdoCopy
-	inputCopy.Product(tmp, inputCopy)                              // Take dot product of layer input values and tmp
-	inputCopy.Scale(n.learningRate, inputCopy)                     // Scale the error adjustment by the learning rate
-	n.weights[layerIndex].Add(inputCopy, n.weights[layerIndex])    // Adjust the weights
+	// Set of matrix's for calculations
+	outputCopy := mat.DenseCopyOf(outputInfo) // Copy mdo into tmp matrix
+	inputCopy := mat.DenseCopyOf(inputInfo)   // Copy mdi into tmp matrix
+
+	tmp := mat.NewDense(n.hiddenLayerSize, n.hiddenLayerSize, nil)
+
+	outputCopy.Apply(sigmoidPrimeWrapper, outputCopy)     // Apply sigmoid prime to mdo
+	layerErr.MulElem(layerErr, outputCopy)                // Multiply layer error and mdoCopy
+	tmp.Product(layerErr, inputCopy.T())                  // Take dot product of layer input values and tmp
+	tmp.Scale(n.learningRate, tmp)                        // Scale the error adjustment by the learning rate
+	n.weights[layerIndex].Add(tmp, n.weights[layerIndex]) // Adjust the weights
 }
 
 // vectorizeMatrix takes a 2D matrix with many columns and turns it into a matrix with only 1 row (vector)
@@ -148,7 +151,7 @@ func vectorizeMatrix(matrix *mat.Dense) *mat.VecDense {
 	return output
 }
 
-// TrainMonochromeImage trains a neural network
+// TrainMonnochromeImage trains a neural network
 func (n *NeuralNet) TrainMonnochromeImage(image *data.MonochromeImageData, expectedOutput *mat.VecDense) (err error) {
 	// Check that the image is the right size
 	imageMat := image.GetDense()

@@ -125,13 +125,13 @@ func (n *NeuralNet) backProp(item *TrainingItem) error {
 	}
 	mdo := mat.DenseCopyOf(mdi)
 
-	// creating temp mats that are used in backprop math
+	// Loop for the backpropagation logic
 	for i := 0; i < n.hiddenLayers; i++ {
 		n.executeLayer(i, data, mdi, mdo, o)
 		terr := mat.DenseCopyOf(firstLayerError)
 
 		// Move error forward a level before we adjust the weights for the layer
-		n.executeLayer(i+1, nil, firstLayerError, firstLayerError, nil)
+		n.executeLayer(i, firstLayerError, firstLayerError, firstLayerError, firstLayerError) // wtf is this line LMAO
 
 		// Adjust weights for layer
 		if i == n.hiddenLayers {

@@ -18,7 +18,6 @@ import (
 
 func runHandwritingFF() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	// TODO Implement pseudo code
 
 	// Get list of images to load from disk
 	paths, err := data.ListFilesDir("/home/owen/Documents/datasets/handwriting/English/Hnd/all.txt~")
@@ -29,10 +28,18 @@ func runHandwritingFF() {
 	// Apply the prefix to paths loaded from text file
 	paths = data.PrefixStringArray(paths, "/home/owen/Documents/datasets/handwriting/English/Hnd/")
 
-	// Segment data set into a training set and a testing set
-	trainingSet, testingSet, _ := data.SegmentDataSet(paths, 0.1)
+	// Filter the images
+	_, paths, err = filterAndLabelData(paths)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Filter and label the data
+	// Segment data set into a training set and a testing set
+	testingSet, trainingSet, _ := data.SegmentDataSet(paths, 0.1)
+
+	fmt.Printf("Training Set Size: %d, Testing Set Size: %d\n", len(trainingSet), len(testingSet))
+
+	// label the data
 	trainingSetLabels, trainingSet, err := filterAndLabelData(trainingSet)
 	if err != nil {
 		log.Fatal(err)
@@ -75,7 +82,7 @@ func runHandwritingFF() {
 
 	// util.PrintDense(trainingImages[0].GetDense())
 	for i := 0; i < len(trainingImages); i++ {
-		fmt.Printf("Image #%d, OutputCount: %d\n", i, trainingSetExpectedData[i].Len())
+		fmt.Printf("Image #%d/%d, OutputCount: %d\n", i+1, len(trainingImages), trainingSetExpectedData[i].Len())
 		err := network.TrainMonnochromeImage(trainingImages[i], trainingSetExpectedData[i])
 		if err != nil {
 			log.Fatal(err)
@@ -85,6 +92,7 @@ func runHandwritingFF() {
 	// Test network on dataset to check trained accuracy
 	gotRight := 0
 	for i := 0; i < len(testingImages); i++ {
+		fmt.Printf("Testing image %d/%d\n", i+1, len(testingImages))
 		result, err := network.PredictMonochromeImage(testingImages[i])
 		if err != nil {
 			log.Fatal(err)
@@ -92,7 +100,7 @@ func runHandwritingFF() {
 
 		// Find the index with the highest output
 		maxIndex := -1
-		for o := 0; o < result.Len(); i++ {
+		for o := 0; o < result.Len(); o++ {
 			if maxIndex == -1 {
 
 			} else {
@@ -105,6 +113,7 @@ func runHandwritingFF() {
 		// Check if the network predicted correctly
 		if maxIndex == testingSetLabels[i] {
 			gotRight++
+			fmt.Println("Got it right!!")
 		}
 	}
 

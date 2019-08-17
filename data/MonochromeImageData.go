@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 
@@ -51,9 +50,6 @@ func (m *MonochromeImageData) loadImageData(img image.Image) {
 func (m *MonochromeImageData) GetDense() *mat.Dense {
 	// Create the mat for the data to be entered into
 	data := mat.NewDense(m.Height, m.Width, nil)
-
-	imgWidth, imgHeight := m.data.Bounds().Dx(), m.data.Bounds().Dy()
-	fmt.Printf("Image Width: %d, Image Height: %d, Data Width: %d, Data Height: %d\n", imgWidth, imgHeight, m.Width, m.Height)
 
 	// Loop through all the pixels in the image
 	for col := 0; col < m.Width; col++ {

@@ -2,7 +2,6 @@
 package data
 
 import (
-	"fmt"
 	"image"
 	"image/png"
 	"os"
@@ -38,7 +37,6 @@ func LoadMonochromeImages(paths []string, width int, height int) ([]*MonochromeI
 				ch = errc
 			} else {
 				// Load the img data into the output array if function did not error
-				fmt.Printf("Loaded image: %d/%d\n", iter, len(paths))
 				output[iter] = img // Copy image into output array
 			}
 
