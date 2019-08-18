@@ -1,4 +1,7 @@
 # GoNeuralNetworks
+
+*Still Major Work in Progress*
+
 Golang Neural Networks Stuffs
 
 ## Packages
