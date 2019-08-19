@@ -75,16 +75,16 @@ func (n NeuralNet) executeLayerReverse(
 ) {
 	if layerNum == n.hiddenLayers {
 		// Executing the last layer in reverse. So move the data from outputData to middleDataOutput
-		middleDataOutput.Product(n.weights[layerNum].T(), outputData)   // Do matrix mult step
-		middleDataOutput.Apply(sigmoidInverseWrapper, middleDataOutput) // Do sigmoid step
+		middleDataOutput.Product(n.weights[layerNum].T(), outputData) // Do matrix mult step
+		middleDataOutput.Apply(sigmoidPrimeWrapper, middleDataOutput) // Do sigmoid step
 	} else if layerNum == 0 {
 		// First pass in reverse
 		inputData.Product(n.weights[layerNum].T(), middleDataInput) // Do matrix mult step
-		inputData.Apply(sigmoidInverseWrapper, inputData)           // Do sigmoid step
+		inputData.Apply(sigmoidPrimeWrapper, inputData)             // Do sigmoid step
 	} else {
 		// Middle layers so move the data from middleDataOutput to middleDataInput
 		middleDataInput.Product(n.weights[layerNum].T(), middleDataOutput) // Do matrix mult step
-		middleDataInput.Apply(sigmoidInverseWrapper, middleDataInput)      // Do sigmoid step
+		middleDataInput.Apply(sigmoidPrimeWrapper, middleDataInput)        // Do sigmoid step
 	}
 }
 
@@ -92,7 +92,7 @@ func (n NeuralNet) executeLayerReverse(
 func generateWeights(sizeX int, sizeY int) []float64 {
 	data := make([]float64, sizeX*sizeY)
 	for i := 0; i < sizeX*sizeY; i++ {
-		data[i] = util.GetRand().Float64()
+		data[i] = (util.GetRand().Float64() - 0.5) * 2 // Make a random number from (-1)-(1)
 	}
 
 	return data
@@ -108,11 +108,6 @@ func sigmoidWrapper(row int, col int, value float64) float64 {
 	return sigmoid(value)
 }
 
-// sigmoidInverseWrapper is a wrapper for the sigmoidInverse for the use in mat.Apply
-func sigmoidInverseWrapper(row int, col int, value float64) float64 {
-	return sigmoidInverse(value)
-}
-
 // backPropIter is a function that does the process for a single iteration of backprop
 // ------------
 // 	layerIndex:	The index of the layer that we are adjusting the weights for
@@ -126,10 +121,18 @@ func (n NeuralNet) backPropIter(layerIndex int, inputInfo *mat.Dense, outputInfo
 	outputCopy := mat.DenseCopyOf(outputInfo) // Copy mdo into tmp matrix
 	inputCopy := mat.DenseCopyOf(inputInfo)   // Copy mdi into tmp matrix
 
-	tmp := mat.NewDense(n.hiddenLayerSize, n.hiddenLayerSize, nil)
+	var tmp *mat.Dense
+	if layerIndex == 0 {
+		tmp = mat.NewDense(n.hiddenLayerSize, n.inputCount, nil)
+	} else if layerIndex == n.hiddenLayers+1 {
+		tmp = mat.NewDense(n.outputCount, n.hiddenLayerSize, nil)
+	} else {
+		tmp = mat.NewDense(n.hiddenLayerSize, n.hiddenLayerSize, nil)
+	}
 
-	outputCopy.Apply(sigmoidPrimeWrapper, outputCopy)     // Apply sigmoid prime to mdo
-	layerErr.MulElem(layerErr, outputCopy)                // Multiply layer error and mdoCopy
+	outputCopy.Apply(sigmoidPrimeWrapper, outputCopy) // Apply sigmoid prime to mdo
+	layerErr.MulElem(layerErr, outputCopy)            // Multiply layer error and mdoCopy
+
 	tmp.Product(layerErr, inputCopy.T())                  // Take dot product of layer input values and tmp
 	tmp.Scale(n.learningRate, tmp)                        // Scale the error adjustment by the learning rate
 	n.weights[layerIndex].Add(tmp, n.weights[layerIndex]) // Adjust the weights
@@ -142,13 +145,14 @@ func vectorizeMatrix(matrix *mat.Dense) *mat.VecDense {
 	output := mat.NewVecDense(width*height, nil)
 
 	// Copy data from matrix to vector
-	for col := 0; col < width; col++ {
-		for row := 0; row < height; row++ {
-			output.SetVec(col+row, matrix.At(col, row))
+	for row := 0; row < height; row++ {
+		for col := 0; col < width; col++ {
+			output.SetVec((row*width)+col, matrix.At(col, row))
 		}
 	}
 
 	// Return vector
+	util.PrintMatrix(output)
 	return output
 }
 

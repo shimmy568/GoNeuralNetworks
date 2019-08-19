@@ -19,8 +19,8 @@ func GetRand() *rand.Rand {
 	return r
 }
 
-// PrintDense prints a dense to the console in a human readable format
-func PrintDense(data *mat.Dense) {
+// PrintMatrix prints a dense to the console in a human readable format
+func PrintMatrix(data mat.Matrix) {
 	f := mat.Formatted(data, mat.Prefix("    "), mat.Squeeze())
 	fmt.Printf("mat:\na = % v\n\n", f)
 }

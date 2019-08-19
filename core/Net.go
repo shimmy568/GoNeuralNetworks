@@ -76,11 +76,6 @@ func (n *NeuralNet) Predict(inputData []float64) (*mat.VecDense, error) {
 	return output, nil
 }
 
-// The inverse of the sigmoid function
-func sigmoidInverse(value float64) float64 {
-	return math.Log(value / (1 - value))
-}
-
 // sigmoidPrime function is a function that represents the derivative of the sigmoid function
 func sigmoidPrime(value float64) float64 {
 	return sigmoid(1 - sigmoid(value))
@@ -105,11 +100,10 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 	// Find error from expected value
 	layerError := mat.NewDense(n.outputCount, 1, nil)
 	for i := 0; i < n.outputCount; i++ {
-		fmt.Printf("a: %f, b: %f\n", res.AtVec(i), item.expectedOutput[i])
 		layerError.Set(i, 0, res.AtVec(i)-item.expectedOutput[i])
 	}
 
-	util.PrintDense(layerError)
+	util.PrintMatrix(layerError)
 
 	// Run the errors in reverse and place the final values in firstLayerError for use in backprop
 	_, firstLayerError, _, err := n.initMatrixes(item.inputData)
@@ -135,9 +129,6 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 		n.executeLayer(i, data, mdi, mdo, o)
 		terr := mat.DenseCopyOf(firstLayerError)
 
-		// Move error forward a level before we adjust the weights for the layer
-		n.executeLayer(i, firstLayerError, firstLayerError, firstLayerError, firstLayerError) // wtf is this line LMAO
-
 		// Adjust weights for layer
 		if i == n.hiddenLayers {
 			// If network is on last layer use mdi/o for input/output
@@ -152,6 +143,8 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 			// If network is not on last/first layer use mdi/mdo for input/output
 			n.backPropIter(i, mdi, mdo, terr)
 		}
+
+		n.executeLayer(i+1, nil, firstLayerError, firstLayerError, firstLayerError) // wtf is this line LMAO
 
 		// Copy data from mdo to mdi
 		mdi.Copy(mdo)
