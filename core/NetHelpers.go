@@ -133,8 +133,9 @@ func (n NeuralNet) backPropIter(layerIndex int, inputInfo *mat.Dense, outputInfo
 	outputCopy.Apply(sigmoidPrimeWrapper, outputCopy) // Apply sigmoid prime to mdo
 	layerErr.MulElem(layerErr, outputCopy)            // Multiply layer error and mdoCopy
 
-	tmp.Product(layerErr, inputCopy.T())                  // Take dot product of layer input values and tmp
-	tmp.Scale(n.learningRate, tmp)                        // Scale the error adjustment by the learning rate
+	tmp.Product(layerErr, inputCopy.T()) // Take dot product of layer input values and tmp
+	tmp.Scale(n.learningRate, tmp)       // Scale the error adjustment by the learning rate
+	// util.PrintMatrix(tmp)
 	n.weights[layerIndex].Add(tmp, n.weights[layerIndex]) // Adjust the weights
 }
 
@@ -152,7 +153,6 @@ func vectorizeMatrix(matrix *mat.Dense) *mat.VecDense {
 	}
 
 	// Return vector
-	util.PrintMatrix(output)
 	return output
 }
 
@@ -196,5 +196,5 @@ func (n *NeuralNet) PredictMonochromeImage(image *data.MonochromeImageData) (out
 		arrayData[i] = vecData.AtVec(i)
 	}
 
-	return n.Predict(arrayData)
+	return n.Predict(arrayData), nil
 }

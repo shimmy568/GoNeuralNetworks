@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/shimmy568/GoNeuralNetworks/util"
+
 	"gonum.org/v1/gonum/mat"
 
 	"github.com/shimmy568/GoNeuralNetworks/core"
@@ -27,6 +29,9 @@ func runHandwritingFF() {
 
 	// Apply the prefix to paths loaded from text file
 	paths = data.PrefixStringArray(paths, "/home/owen/Documents/datasets/handwriting/English/Hnd/")
+
+	// Shuffle the data
+	util.GetRand().Shuffle(len(paths), func(i, j int) { paths[i], paths[j] = paths[j], paths[i] }) // Shuffle the paths
 
 	// Filter the images
 	_, paths, err = filterAndLabelData(paths)

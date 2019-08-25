@@ -24,3 +24,12 @@ func PrintMatrix(data mat.Matrix) {
 	f := mat.Formatted(data, mat.Prefix("    "), mat.Squeeze())
 	fmt.Printf("mat:\na = % v\n\n", f)
 }
+
+// PrintFloatArray prints an array of floats
+func PrintFloatArray(data []float64) {
+	fmt.Printf("[")
+	for i := 0; i < len(data); i++ {
+		fmt.Printf("%f, ", data[i])
+	}
+	fmt.Printf("]\n")
+}
