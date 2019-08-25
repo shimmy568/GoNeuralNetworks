@@ -27,67 +27,6 @@ func (n NeuralNet) initMatrixes(inpData []float64) (inputData *mat.Dense, middle
 	return inputData, middleData, outputData, nil
 }
 
-// executeLayer is a function that executes a layer of the neural network
-// The function will modify the arguments to do it's work
-// ------------
-// 	layerNum:		The layer that the function will execute
-// 	inputData:	The input data to the network. Should have dims of (n.inputCount, 1)
-// 	middleData:	A matrix that will be used to store the data when executing the middle layers.
-// 							Should have dims of (n.hiddenLayerSize, 1)
-// 	outputData:	A matrix that will be used to store the output data from the network
-// 							Should have dims of (n.outputCount, 1)
-// ------------
-// The function will decide which *mat.Dense to use depending on what layer you are executing
-// To run an entire network operation you will need to give all inputs of layerNum from
-// 0 - n.hiddenLayers
-func (n NeuralNet) executeLayer(
-	layerNum int,
-	inputData *mat.Dense,
-	middleDataInput *mat.Dense,
-	middleDataOutput *mat.Dense,
-	outputData *mat.Dense,
-) {
-	// Create temp dense to store data in
-
-	if layerNum == n.hiddenLayers {
-		// It's the last step in the prop so use o
-		outputData.Product(n.weights[layerNum], middleDataInput) // Do dot product step
-		outputData.Apply(sigmoidWrapper, outputData)             // Do sigmoid step
-	} else if layerNum == 0 {
-		// First pass so use md to store and data as input
-		middleDataOutput.Product(n.weights[layerNum], inputData) // Do dot product step
-		middleDataOutput.Apply(sigmoidWrapper, middleDataOutput) // Do sigmoid step
-	} else {
-		// It's not the last step so use md
-		middleDataOutput.Product(n.weights[layerNum], middleDataInput) // Do dot product step
-		middleDataOutput.Apply(sigmoidWrapper, middleDataOutput)       // Do sigmoid step
-	}
-}
-
-// executeLayerReverse does the same thing as executeLayer but uses an inverse sigmoid function instead of sigmoid
-// This allows us to run the error through the network backwards easily
-func (n NeuralNet) executeLayerReverse(
-	layerNum int,
-	inputData *mat.Dense,
-	middleDataInput *mat.Dense,
-	middleDataOutput *mat.Dense,
-	outputData *mat.Dense,
-) {
-	if layerNum == n.hiddenLayers {
-		// Executing the last layer in reverse. So move the data from outputData to middleDataOutput
-		middleDataOutput.Product(n.weights[layerNum].T(), outputData) // Do matrix mult step
-		middleDataOutput.Apply(sigmoidPrimeWrapper, middleDataOutput) // Do sigmoid step
-	} else if layerNum == 0 {
-		// First pass in reverse
-		inputData.Product(n.weights[layerNum].T(), middleDataInput) // Do matrix mult step
-		inputData.Apply(sigmoidPrimeWrapper, inputData)             // Do sigmoid step
-	} else {
-		// Middle layers so move the data from middleDataOutput to middleDataInput
-		middleDataInput.Product(n.weights[layerNum].T(), middleDataOutput) // Do matrix mult step
-		middleDataInput.Apply(sigmoidPrimeWrapper, middleDataInput)        // Do sigmoid step
-	}
-}
-
 // generateWeights generates a random set of weights for the creation of the network
 func generateWeights(sizeX int, sizeY int) []float64 {
 	data := make([]float64, sizeX*sizeY)
@@ -98,45 +37,9 @@ func generateWeights(sizeX int, sizeY int) []float64 {
 	return data
 }
 
-// sigmoidPrimeWrapper is a wrapper for use in mat.Apply
-func sigmoidPrimeWrapper(row int, col int, value float64) float64 {
-	return sigmoidPrime(value)
-}
-
 // sigmoidWrapper is a function that wraps the sigmoid function to allow for use is mat.Apply
 func sigmoidWrapper(row int, col int, value float64) float64 {
 	return sigmoid(value)
-}
-
-// backPropIter is a function that does the process for a single iteration of backprop
-// ------------
-// 	layerIndex:	The index of the layer that we are adjusting the weights for
-// 	inputInfo:	The input for the layer that we are adjusting for
-// 	outputInfo:	The outputs for the layer that we are adjusting for
-// 	layerErr:		The error for the layer
-// ------------
-// This function will change the weights of the neural network but shouldn't have any extra side effects
-func (n NeuralNet) backPropIter(layerIndex int, inputInfo *mat.Dense, outputInfo *mat.Dense, layerErr *mat.Dense) {
-	// Set of matrix's for calculations
-	outputCopy := mat.DenseCopyOf(outputInfo) // Copy mdo into tmp matrix
-	inputCopy := mat.DenseCopyOf(inputInfo)   // Copy mdi into tmp matrix
-
-	var tmp *mat.Dense
-	if layerIndex == 0 {
-		tmp = mat.NewDense(n.hiddenLayerSize, n.inputCount, nil)
-	} else if layerIndex == n.hiddenLayers+1 {
-		tmp = mat.NewDense(n.outputCount, n.hiddenLayerSize, nil)
-	} else {
-		tmp = mat.NewDense(n.hiddenLayerSize, n.hiddenLayerSize, nil)
-	}
-
-	outputCopy.Apply(sigmoidPrimeWrapper, outputCopy) // Apply sigmoid prime to mdo
-	layerErr.MulElem(layerErr, outputCopy)            // Multiply layer error and mdoCopy
-
-	tmp.Product(layerErr, inputCopy.T()) // Take dot product of layer input values and tmp
-	tmp.Scale(n.learningRate, tmp)       // Scale the error adjustment by the learning rate
-	// util.PrintMatrix(tmp)
-	n.weights[layerIndex].Add(tmp, n.weights[layerIndex]) // Adjust the weights
 }
 
 // vectorizeMatrix takes a 2D matrix with many columns and turns it into a matrix with only 1 row (vector)

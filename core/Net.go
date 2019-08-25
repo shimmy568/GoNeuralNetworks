@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/shimmy568/GoNeuralNetworks/util"
-
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -79,9 +77,15 @@ func (n *NeuralNet) Predict(inputData []float64) *mat.VecDense {
 	return output
 }
 
-// sigmoidPrime function is a function that represents the derivative of the sigmoid function
-func sigmoidPrime(value float64) float64 {
-	return sigmoid(1 - sigmoid(value))
+// sigmoidPrime applies a inverse of the sigmoid function to a matrix
+func sigmoidPrime(m mat.Matrix) mat.Matrix {
+	rows, _ := m.Dims()
+	o := make([]float64, rows)
+	for i := range o {
+		o[i] = 1
+	}
+	ones := mat.NewDense(rows, 1, o)
+	return multiply(m, subtract(ones, m)) // m * (1 - m)
 }
 
 // Train is a function that is for one iteration of training using backpropagation
@@ -94,70 +98,48 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 		return fmt.Errorf("Output dimension for training data doesn't match network's")
 	}
 
-	// Run forward pass for network
-	res := n.Predict(item.inputData)
+	hiddenInputData := make([]mat.Matrix, n.hiddenLayers+1)
+	hiddenOutputData := make([]mat.Matrix, n.hiddenLayers+1)
 
-	// Find error from expected value
-	layerError := mat.NewDense(n.outputCount, 1, nil)
-	for i := 0; i < n.outputCount; i++ {
-		layerError.Set(i, 0, res.AtVec(i)-item.expectedOutput[i])
-	}
+	input := mat.NewDense(n.inputCount, 1, item.inputData)
 
-	util.PrintFloatArray(item.expectedOutput)
-	fmt.Println("res: ")
-	util.PrintMatrix(res)
-
-	fmt.Println("layerError: ")
-	util.PrintMatrix(layerError)
-
-	fmt.Println("---------------")
-
-	// Run the errors in reverse and place the final values in firstLayerError for use in backprop
-	_, firstLayerError, _, err := n.initMatrixes(item.inputData)
-	if err != nil {
-		return err
-	}
-	n.executeLayerReverse(n.hiddenLayers, nil, nil, firstLayerError, layerError) // Execute the last layer in reverse
-
-	for i := n.hiddenLayers - 1; i > 0; i-- { // Don't execute the last and first layers of the network
-		n.executeLayerReverse(i, nil, firstLayerError, firstLayerError, nil) // Execute the layer of the network in reverse
-	}
-
-	// mdi is middle layer input mdo is middle layer output since we need to keep track of both
-	// for the backprop process
-	data, mdi, o, err := n.initMatrixes(item.inputData)
-	if err != nil {
-		return err
-	}
-	mdo := mat.DenseCopyOf(mdi)
-
-	// Loop for the backpropagation logic
-	for i := 0; i < n.hiddenLayers; i++ {
-
-		if i != 0 {
-			n.executeLayer(i+1, nil, firstLayerError, firstLayerError, nil) // wtf is this line LMAO
-		}
-
-		n.executeLayer(i, data, mdi, mdo, o)
-		terr := mat.DenseCopyOf(firstLayerError)
-
-		// Adjust weights for layer
-		if i == n.hiddenLayers {
-			// If network is on last layer use mdi/o for input/output
-			n.backPropIter(i, mdi, o, terr)
-
-			// Don't bother copying the data from mdi to mdo since it's the last step anyhow
-			break
-		} else if i == 0 {
-			// If on first layer use data/mdo for input/output
-			n.backPropIter(i, data, mdo, terr)
+	// Do the forward propagation step and store all the results from each layer for the backpropagation step
+	for i := 0; i < n.hiddenLayers+1; i++ {
+		if i == 0 {
+			hiddenInputData[i] = dot(n.weights[i], input)
 		} else {
-			// If network is not on last/first layer use mdi/mdo for input/output
-			n.backPropIter(i, mdi, mdo, terr)
+			hiddenInputData[i] = dot(n.weights[i], hiddenOutputData[i-1])
 		}
 
-		// Copy data from mdo to mdi
-		mdi.Copy(mdo)
+		hiddenOutputData[i] = apply(sigmoidWrapper, hiddenInputData[i])
+	}
+
+	// Init arrays and find the error for the output layer of the network
+	targets := mat.NewDense(len(item.expectedOutput), 1, item.expectedOutput)
+	errors := make([]mat.Matrix, n.hiddenLayers+1)
+	errors[n.hiddenLayers] = subtract(targets, hiddenOutputData[len(hiddenOutputData)-1])
+
+	// Find the errors for the rest of the layers
+	for i := 0; i < n.hiddenLayers; i++ {
+		// Take the dot product of the weights and the error from the previous layer
+		errors[n.hiddenLayers-(1+i)] = dot(n.weights[n.hiddenLayers-i].T(), errors[n.hiddenLayers-i])
+	}
+
+	// Do the actual backpropagation for the weights
+	for i := 0; i < n.hiddenLayers+1; i++ {
+
+		// Find what the input for the layer is
+		var layerInput mat.Matrix
+		if i == 0 { // If it's the first layer use the inputs for the network
+			layerInput = input
+		} else { // If it's any other layer use the output from the previous layer
+			layerInput = hiddenOutputData[i-1]
+		}
+
+		delta := scale(n.learningRate,
+			dot(multiply(errors[i], sigmoidPrime(hiddenOutputData[i])),
+				layerInput.T()))
+		n.weights[i] = add(n.weights[i], delta).(*mat.Dense)
 	}
 
 	return nil

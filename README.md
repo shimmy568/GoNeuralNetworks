@@ -25,4 +25,4 @@ Golang Neural Networks Stuffs
 ## Refrences
 
 - https://sausheong.github.io/posts/how-to-build-a-simple-artificial-neural-network-with-go/
-- Shit load of stuff from https://stackoverflow.com/
+- Shit load of stuff from https://stackoverflow.com/ (as any programmer does)

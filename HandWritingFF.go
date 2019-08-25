@@ -83,7 +83,7 @@ func runHandwritingFF() {
 
 	imageWidth := trainingImages[0].Width
 	imageHeight := trainingImages[0].Height
-	network := core.CreateNetwork(imageWidth*imageHeight, 10, 1, 100, 0.05)
+	network := core.CreateNetwork(imageWidth*imageHeight, 10, 1, 2000, 0.1)
 
 	for i := 0; i < len(trainingImages); i++ {
 		fmt.Printf("Image #%d/%d, OutputCount: %d\n", i+1, len(trainingImages), trainingSetExpectedData[i].Len())
