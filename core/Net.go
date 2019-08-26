@@ -14,7 +14,9 @@ type NeuralNet struct {
 	outputCount     int
 	hiddenLayers    int
 	hiddenLayerSize int
-	learningRate    float64
+
+	// LearningRate is the learning rate used when training the network
+	LearningRate float64
 
 	// Weights of the network
 	weights []*mat.Dense
@@ -35,7 +37,7 @@ func CreateNetwork(inputCount int, outputCount int, hiddenLayers int, hiddenLaye
 	n.outputCount = outputCount
 	n.hiddenLayers = hiddenLayers
 	n.hiddenLayerSize = hiddenLayerSize
-	n.learningRate = learningRate
+	n.LearningRate = learningRate
 
 	// Generate random weights for network
 	for i := 0; i < len(n.weights); i++ {
@@ -49,6 +51,26 @@ func CreateNetwork(inputCount int, outputCount int, hiddenLayers int, hiddenLaye
 	}
 
 	return n
+}
+
+// GetInputCount returns the number of input nodes for the network
+func (n *NeuralNet) GetInputCount() int {
+	return n.inputCount
+}
+
+// GetOutputCount returns the number of input nodes for the network
+func (n *NeuralNet) GetOutputCount() int {
+	return n.outputCount
+}
+
+// GetHiddenLayerCount returns the number of input nodes for the network
+func (n *NeuralNet) GetHiddenLayerCount() int {
+	return n.hiddenLayers
+}
+
+// GetHiddenLayerSize the size of the hidden layers in the network
+func (n *NeuralNet) GetHiddenLayerSize() int {
+	return n.hiddenLayerSize
 }
 
 // Predict takes a set of input data and generates a set of output values
@@ -119,6 +141,21 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 	errors := make([]mat.Matrix, n.hiddenLayers+1)
 	errors[n.hiddenLayers] = subtract(targets, hiddenOutputData[len(hiddenOutputData)-1])
 
+	// DEBUGGING SHIT
+	// index := -1
+	// for i := 0; i < len(item.expectedOutput); i++ {
+	// 	if item.expectedOutput[i] == 1 {
+	// 		index = i
+	// 	}
+	// }
+	// fmt.Printf("-------------------\nExpected Value: %d\n", index)
+	// fmt.Println("Result: ")
+	// util.PrintMatrix(hiddenOutputData[len(hiddenOutputData)-1])
+	// fmt.Println("Output Error: ")
+	// util.PrintMatrix(errors[n.hiddenLayers])
+	// w, h := errors[n.hiddenLayers].Dims()
+	// fmt.Printf("Avg Error: %f\n", math.Abs(mat.Sum(errors[n.hiddenLayers])/float64(w*h)))
+
 	// Find the errors for the rest of the layers
 	for i := 0; i < n.hiddenLayers; i++ {
 		// Take the dot product of the weights and the error from the previous layer
@@ -136,7 +173,7 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 			layerInput = hiddenOutputData[i-1]
 		}
 
-		delta := scale(n.learningRate,
+		delta := scale(n.LearningRate,
 			dot(multiply(errors[i], sigmoidPrime(hiddenOutputData[i])),
 				layerInput.T()))
 		n.weights[i] = add(n.weights[i], delta).(*mat.Dense)

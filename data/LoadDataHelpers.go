@@ -100,7 +100,7 @@ func PrefixStringArray(strs []string, prefix string) []string {
 	return outputData
 }
 
-// MakeDenseNormal makes all the values in the matrix between 0 and 1 (inclusively)
+// MakeDenseNormal makes all the values in the matrix between 0 and 1 (exclusivily)
 func MakeDenseNormal(matrix *mat.Dense) {
 	min := mat.Min(matrix)
 	max := mat.Max(matrix)
@@ -110,8 +110,8 @@ func MakeDenseNormal(matrix *mat.Dense) {
 		return value - min
 	}, matrix)
 
-	// Divide all values by max
+	// Divide all values by max and make sure the values aren't equal to exsactly 0 or 1
 	matrix.Apply(func(i, j int, value float64) float64 {
-		return value / max
+		return 0.999*(value/max) + 0.001
 	}, matrix)
 }

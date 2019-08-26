@@ -2,8 +2,9 @@ package core
 
 import (
 	"errors"
+	"math"
 
-	"github.com/shimmy568/GoNeuralNetworks/util"
+	"gonum.org/v1/gonum/stat/distuv"
 
 	"github.com/shimmy568/GoNeuralNetworks/data"
 
@@ -29,9 +30,15 @@ func (n NeuralNet) initMatrixes(inpData []float64) (inputData *mat.Dense, middle
 
 // generateWeights generates a random set of weights for the creation of the network
 func generateWeights(sizeX int, sizeY int) []float64 {
+
+	d := distuv.Uniform{
+		Min: -1 / math.Sqrt(float64(sizeY)),
+		Max: 1 / math.Sqrt(float64(sizeY)),
+	}
+
 	data := make([]float64, sizeX*sizeY)
 	for i := 0; i < sizeX*sizeY; i++ {
-		data[i] = (util.GetRand().Float64() - 0.5) * 2 // Make a random number from (-1)-(1)
+		data[i] = d.Rand()
 	}
 
 	return data
