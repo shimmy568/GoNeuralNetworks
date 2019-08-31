@@ -34,43 +34,55 @@ func printStrArray(arr []string) {
 
 func mnistTrain(net *core.NeuralNet) {
 	rand.Seed(time.Now().UTC().UnixNano())
-	t1 := time.Now()
+	startTime := time.Now()
 
+	trainingData := make([]*core.TrainingItem, 0)
+
+	// Load the training data in memory
+	testFile, _ := os.Open("mnist_dataset/mnist_train.csv")
+	r := csv.NewReader(bufio.NewReader(testFile))
+	for {
+		// Read the row from the csv reader
+		csvRow, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+
+		// Parse the input data from the csv row
+		inputs := mat.NewVecDense(net.GetInputCount(), nil)
+		for i := 0; i < net.GetInputCount(); i++ {
+			x, _ := strconv.ParseFloat(csvRow[i], 64)
+			inputs.SetVec(i, (x/255.0*0.999)+0.001)
+		}
+
+		// Create the vector that holds the expected output for the output layer of the network
+		targets := mat.NewVecDense(10, nil)
+		for i := 0; i < 10; i++ {
+			targets.SetVec(i, 0.001)
+		}
+		x, _ := strconv.Atoi(csvRow[0])
+		targets.SetVec(x, 0.999)
+
+		// Train the network on the data item
+		trainingData = append(trainingData, core.CreateTrainingItem(inputs, targets))
+	}
+	testFile.Close()
+
+	// Train the network on the data we loaded in
 	for epochs := 0; epochs < epochCountMnist; epochs++ {
 		fmt.Printf("Epoch #%d\n", epochs)
-		testFile, _ := os.Open("mnist_dataset/mnist_train.csv")
-		r := csv.NewReader(bufio.NewReader(testFile))
-		i := 0
-		for {
-			i++
+		for i := range trainingData {
+			// Print what item we are training on every 1000 items
 			if i%1000 == 0 {
 				fmt.Printf("Item: %d\n", i)
 			}
-			record, err := r.Read()
-			if err == io.EOF {
-				break
-			}
 
-			inputs := mat.NewVecDense(net.GetInputCount(), nil)
-			for i := 0; i < net.GetInputCount(); i++ {
-				x, _ := strconv.ParseFloat(record[i], 64)
-				inputs.SetVec(i, (x/255.0*0.999)+0.001)
-			}
-
-			targets := mat.NewVecDense(10, nil)
-			for i := 0; i < 10; i++ {
-				targets.SetVec(i, 0.001)
-			}
-			x, _ := strconv.Atoi(record[0])
-			targets.SetVec(x, 0.999)
-
-			item := core.CreateTrainingItem(inputs, targets)
-			net.Train(item)
+			net.Train(trainingData[i])
 		}
-		testFile.Close()
 	}
-	elapsed := time.Since(t1)
-	fmt.Printf("\nTime taken to train: %s\n", elapsed)
+
+	elapsed := time.Since(startTime)
+	fmt.Printf("\nDuration of training: %s\n", elapsed)
 }
 
 func mnistPredict(net *core.NeuralNet) {
