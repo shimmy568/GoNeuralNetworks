@@ -80,7 +80,7 @@ func (n *NeuralNet) Predict(inputData []float64) *mat.VecDense {
 	var hiddenInputs mat.Matrix
 	var hiddenOutputs mat.Matrix
 
-	for i := 0; i < n.hiddenLayers; i++ {
+	for i := 0; i < n.hiddenLayers+1; i++ {
 		if i == 0 {
 			hiddenInputs = dot(n.weights[i], inputs)
 		} else {
@@ -139,22 +139,7 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 	// Init arrays and find the error for the output layer of the network
 	targets := mat.NewDense(len(item.expectedOutput), 1, item.expectedOutput)
 	errors := make([]mat.Matrix, n.hiddenLayers+1)
-	errors[n.hiddenLayers] = subtract(targets, hiddenOutputData[len(hiddenOutputData)-1])
-
-	// DEBUGGING SHIT
-	// index := -1
-	// for i := 0; i < len(item.expectedOutput); i++ {
-	// 	if item.expectedOutput[i] == 1 {
-	// 		index = i
-	// 	}
-	// }
-	// fmt.Printf("-------------------\nExpected Value: %d\n", index)
-	// fmt.Println("Result: ")
-	// util.PrintMatrix(hiddenOutputData[len(hiddenOutputData)-1])
-	// fmt.Println("Output Error: ")
-	// util.PrintMatrix(errors[n.hiddenLayers])
-	// w, h := errors[n.hiddenLayers].Dims()
-	// fmt.Printf("Avg Error: %f\n", math.Abs(mat.Sum(errors[n.hiddenLayers])/float64(w*h)))
+	errors[n.hiddenLayers] = subtract(targets, hiddenOutputData[len(hiddenOutputData)-1]) // Find error for output layer
 
 	// Find the errors for the rest of the layers
 	for i := 0; i < n.hiddenLayers; i++ {

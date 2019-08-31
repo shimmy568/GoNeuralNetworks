@@ -25,7 +25,8 @@ import (
 // This file is for holding the logic associated with having
 
 func runHandwritingFF() {
-	n := core.CreateNetwork(28*28, 10, 1, 100, 0.1)
+	n := core.CreateNetwork(28*28, 10, 1, 200, 0.1)
+
 	mnistTrain(&n)
 	mnistPredict(&n)
 
@@ -51,7 +52,7 @@ func runHandwritingFF() {
 	}
 
 	// Segment data set into a training set and a testing set
-	testingSet, trainingSet, _ := data.SegmentDataSet(paths, 0.1)
+	testingSet, trainingSet, _ := data.SegmentDataSet(paths, 5)
 
 	fmt.Printf("Training Set Size: %d, Testing Set Size: %d\n", len(trainingSet), len(testingSet))
 
@@ -187,7 +188,7 @@ func mnistTrain(net *core.NeuralNet) {
 	rand.Seed(time.Now().UTC().UnixNano())
 	t1 := time.Now()
 
-	for epochs := 0; epochs < 5; epochs++ {
+	for epochs := 0; epochs < 1; epochs++ {
 		fmt.Printf("Epoch #%d\n", epochs)
 		testFile, _ := os.Open("mnist_dataset/mnist_train.csv")
 		r := csv.NewReader(bufio.NewReader(testFile))
@@ -257,6 +258,7 @@ func mnistPredict(net *core.NeuralNet) {
 			}
 		}
 		target, _ := strconv.Atoi(record[0])
+		fmt.Printf("Guessed: %d, Actually: %d\n", best, target)
 		if best == target {
 			score++
 		}
