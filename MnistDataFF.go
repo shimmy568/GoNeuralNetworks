@@ -15,6 +15,8 @@ import (
 	"github.com/shimmy568/GoNeuralNetworks/core"
 )
 
+const epochCountMnist = 1
+
 // This file is for holding the logic associated with having
 
 func runMnistDataFF() {
@@ -34,7 +36,7 @@ func mnistTrain(net *core.NeuralNet) {
 	rand.Seed(time.Now().UTC().UnixNano())
 	t1 := time.Now()
 
-	for epochs := 0; epochs < 1; epochs++ {
+	for epochs := 0; epochs < epochCountMnist; epochs++ {
 		fmt.Printf("Epoch #%d\n", epochs)
 		testFile, _ := os.Open("mnist_dataset/mnist_train.csv")
 		r := csv.NewReader(bufio.NewReader(testFile))

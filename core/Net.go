@@ -132,7 +132,7 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 		return fmt.Errorf("Output dimension for training data doesn't match network's")
 	}
 
-	hiddenInputData := make([]mat.Matrix, n.hiddenLayers+1)
+	var hiddenInputData mat.Matrix
 	hiddenOutputData := make([]mat.Matrix, n.hiddenLayers+1)
 
 	input := mat.NewDense(n.inputCount, 1, item.inputData)
@@ -140,12 +140,12 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 	// Do the forward propagation step and store all the results from each layer for the backpropagation step
 	for i := 0; i < n.hiddenLayers+1; i++ {
 		if i == 0 {
-			hiddenInputData[i] = dot(n.weights[i], input)
+			hiddenInputData = dot(n.weights[i], input)
 		} else {
-			hiddenInputData[i] = dot(n.weights[i], hiddenOutputData[i-1])
+			hiddenInputData = dot(n.weights[i], hiddenOutputData[i-1])
 		}
 
-		hiddenOutputData[i] = apply(sigmoidWrapper, hiddenInputData[i])
+		hiddenOutputData[i] = apply(sigmoidWrapper, hiddenInputData)
 	}
 
 	// Init arrays and find the error for the output layer of the network
@@ -170,10 +170,10 @@ func (n *NeuralNet) Train(item *TrainingItem) error {
 			layerInput = hiddenOutputData[i-1]
 		}
 
-		delta := scale(n.LearningRate,
-			dot(multiply(errors[i], sigmoidPrime(hiddenOutputData[i])),
-				layerInput.T()))
-		n.weights[i] = add(n.weights[i], delta).(*mat.Dense)
+		delta := dot(multiply(errors[i], sigmoidPrime(hiddenOutputData[i])),
+			layerInput.T())
+		delta.Scale(n.LearningRate, delta)
+		n.weights[i].Add(n.weights[i], delta)
 	}
 
 	return nil

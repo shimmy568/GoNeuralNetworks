@@ -13,21 +13,6 @@ import (
 
 // This file stores some of the helper functions for the NeuralNetwork struct
 
-// The function sets up the arrays for the forward propagation process
-func (n NeuralNet) initMatrixes(inpData []float64) (inputData *mat.Dense, middleData *mat.Dense, outputData *mat.Dense, err error) {
-	// Check that input data is right length
-	if len(inpData) != n.inputCount {
-		return nil, nil, nil, errors.New("input data is incorrect length for network")
-	}
-
-	inputData = mat.NewDense(n.inputCount, 1, inpData)
-
-	middleData = mat.NewDense(n.hiddenLayerSize, 1, nil)
-	outputData = mat.NewDense(n.outputCount, 1, nil)
-
-	return inputData, middleData, outputData, nil
-}
-
 // generateWeights generates a random set of weights for the creation of the network
 func generateWeights(sizeX int, sizeY int) []float64 {
 

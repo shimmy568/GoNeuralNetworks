@@ -14,9 +14,9 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-const imageWidth = 32
-const imageHeight = 24
-const epochCount = 50
+const imageWidthHandwriting = 32
+const imageHeightHandwriting = 24
+const epochCountHandwriting = 50
 
 // runHandwritingFF trains and tests the network and stuffs
 func runHandwritingFF() {
@@ -25,7 +25,7 @@ func runHandwritingFF() {
 	trainingImages, trainingLables, testingImages, testingLabels := loadAndProcessData()
 
 	// Create the network
-	n := core.CreateNetwork(imageWidth*imageHeight, 10, 1, 200, 0.05)
+	n := core.CreateNetwork(imageWidthHandwriting*imageHeightHandwriting, 10, 1, 200, 0.05)
 
 	// Train the network
 	trainHandwritingFF(&n, trainingImages, trainingLables)
@@ -70,12 +70,12 @@ func loadAndProcessData() ([]*data.MonochromeImageData, []int, []*data.Monochrom
 	}
 
 	// Load images from disk
-	trainingImages, err := data.LoadMonochromeImages(trainingSet, imageWidth, imageHeight)
+	trainingImages, err := data.LoadMonochromeImages(trainingSet, imageWidthHandwriting, imageHeightHandwriting)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	testingImages, err := data.LoadMonochromeImages(testingSet, imageWidth, imageHeight)
+	testingImages, err := data.LoadMonochromeImages(testingSet, imageWidthHandwriting, imageHeightHandwriting)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,8 +94,8 @@ func trainHandwritingFF(n *core.NeuralNet, images []*data.MonochromeImageData, l
 	}
 
 	// Train the network on the trainging data for the number of epochs
-	for o := 0; o < epochCount; o++ {
-		fmt.Printf("Epoch: %d/%d\n", o+1, epochCount) // Print the current epoch number
+	for o := 0; o < epochCountHandwriting; o++ {
+		fmt.Printf("Epoch: %d/%d\n", o+1, epochCountHandwriting) // Print the current epoch number
 		for i := 0; i < len(images); i++ {
 			// Shuffle order array
 			util.GetRand().Shuffle(len(order), func(i, j int) { order[i], order[j] = order[j], order[i] })
