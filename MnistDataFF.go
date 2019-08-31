@@ -23,7 +23,11 @@ func runMnistDataFF() {
 	n := core.CreateNetwork(28*28, 10, 1, 200, 0.1)
 
 	mnistTrain(&n)
-	mnistPredict(&n)
+	n.SaveWeights("test.model")
+
+	n2 := core.CreateNetwork(28*28, 10, 1, 200, 0.1)
+	n2.LoadWeights("test.model")
+	mnistPredict(&n2)
 }
 
 func printStrArray(arr []string) {

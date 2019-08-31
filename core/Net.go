@@ -1,8 +1,13 @@
 package core
 
 import (
+	"bufio"
+	"encoding/csv"
+	"errors"
 	"fmt"
 	"math"
+	"os"
+	"strconv"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -75,13 +80,86 @@ func (n *NeuralNet) GetHiddenLayerSize() int {
 
 // SaveWeights save the weights of the network to a file on disk
 func (n *NeuralNet) SaveWeights(path string) error {
-	// TODO
+	dataFile, _ := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0662)
+	writer := csv.NewWriter(bufio.NewWriter(dataFile))
+	defer dataFile.Close()
+
+	// Write network metadata in first row of csv
+	inputCount := strconv.Itoa(n.inputCount)
+	outputCount := strconv.Itoa(n.outputCount)
+	hiddenLayerCount := strconv.Itoa(n.hiddenLayers)
+	hiddenLayerSize := strconv.Itoa(n.hiddenLayerSize)
+	info := []string{inputCount, outputCount, hiddenLayerCount, hiddenLayerSize}
+	writer.Write(info)
+
+	// Convert all layers of network to string array
+	data := make([]string, 0)
+	for i := range n.weights {
+		// Convert layer to btye array
+		rawData, err := n.weights[i].MarshalBinary()
+		if err != nil {
+			return err
+		}
+
+		// Add byte array to data array as string
+		data = append(data, string(rawData))
+	}
+
+	// Write layer data to network
+	writer.Write(data)
+
 	return nil
 }
 
 // LoadWeights load the weights of the network from a file on disk
 func (n *NeuralNet) LoadWeights(path string) error {
-	// TODO
+	dataFile, _ := os.Open(path)
+	reader := csv.NewReader(bufio.NewReader(dataFile))
+	defer dataFile.Close()
+
+	rawMetadata, err := reader.Read()
+	if err != nil {
+		return err
+	}
+
+	// The array that holds the parsed metadata
+	// Spots in the array are as follows [inputCount, outputCount, hiddenLayerCount, hiddenLayerSize]
+	metadata := make([]int, 4)
+	for i := range rawMetadata {
+		metadata[i], err = strconv.Atoi(rawMetadata[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	// make sure the loaded data matches the dims of the network we are loading it into
+	if metadata[0] != n.inputCount {
+		return errors.New("Input count of loaded model doesn't match the network")
+	}
+
+	if metadata[1] != n.outputCount {
+		return errors.New("Output count of loaded model doesn't match the network")
+	}
+
+	if metadata[2] != n.hiddenLayers {
+		return errors.New("Hidden layer count doesn't match the network")
+	}
+
+	if metadata[3] != n.hiddenLayerSize {
+		return errors.New("Hidden layer size doesn't match the network")
+	}
+
+	// Read the layer data from the file
+	layerData, err := reader.Read()
+	if err != nil {
+		return err
+	}
+
+	// Parse the layer data from the file
+	for i := range layerData {
+		n.weights[i].UnmarshalBinary([]byte(layerData[i]))
+	}
+
 	return nil
 }
 
