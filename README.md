@@ -4,6 +4,11 @@
 
 Golang Neural Networks Stuffs
 
+## Networks
+
+- MnistDataFF (DONE): This is just a simple feed forward neural network doing it's thing on a mnist data set. Just making sure the feed forward neural network works before I try anything crazy. (dataset is in mnist_dataset folder zipped up)
+- HandwritingFF (IN PROGRESS): Me trying to get this bad boy to be able to learn all handwritten letters from a more. [dataset]()
+
 ## Packages
 
 - core: The core logic and data structures for the neural networks (training, predictions, ...)

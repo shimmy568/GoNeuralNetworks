@@ -73,6 +73,18 @@ func (n *NeuralNet) GetHiddenLayerSize() int {
 	return n.hiddenLayerSize
 }
 
+// SaveWeights save the weights of the network to a file on disk
+func (n *NeuralNet) SaveWeights(path string) error {
+	// TODO
+	return nil
+}
+
+// LoadWeights load the weights of the network from a file on disk
+func (n *NeuralNet) LoadWeights(path string) error {
+	// TODO
+	return nil
+}
+
 // Predict takes a set of input data and generates a set of output values
 func (n *NeuralNet) Predict(inputData []float64) *mat.VecDense {
 

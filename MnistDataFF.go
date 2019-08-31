@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -14,131 +13,77 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shimmy568/GoNeuralNetworks/util"
-
 	"gonum.org/v1/gonum/mat"
 
 	"github.com/shimmy568/GoNeuralNetworks/core"
-	"github.com/shimmy568/GoNeuralNetworks/data"
 )
 
 // This file is for holding the logic associated with having
 
-func runHandwritingFF() {
+func mnistDataFF() {
 	n := core.CreateNetwork(28*28, 10, 1, 200, 0.1)
 
 	mnistTrain(&n)
 	mnistPredict(&n)
 
-	return
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	// OLD CODE
+	// w, h := trainingImages[0].GetDense().Dims()
+	// fmt.Printf("Width of training images: %d,%d\n", w, h)
 
-	// Get list of images to load from disk
-	paths, err := data.ListFilesDir("/home/owen/Documents/datasets/handwriting/English/Hnd/all.txt~")
-	if err != nil {
-		panic(err)
-	}
+	// w, h = testingImages[0].GetDense().Dims()
+	// fmt.Printf("Width of testing images: %d,%d\n", w, h)
 
-	// Apply the prefix to paths loaded from text file
-	paths = data.PrefixStringArray(paths, "/home/owen/Documents/datasets/handwriting/English/Hnd/")
+	// fmt.Printf("Number of images in training set: %d\n", len(trainingImages))
+	// fmt.Printf("Number of images in testing set: %d\n", len(testingImages))
+	// fmt.Printf("Number of labels in training set: %d\n", len(trainingSetLabels))
+	// fmt.Printf("Number of labels in training set: %d\n", len(testingSetLabels))
 
-	// Shuffle the data
-	util.GetRand().Shuffle(len(paths), func(i, j int) { paths[i], paths[j] = paths[j], paths[i] }) // Shuffle the paths
+	// imageWidth := trainingImages[0].Width
+	// imageHeight := trainingImages[0].Height
+	// network := core.CreateNetwork(imageWidth*imageHeight, 10, 1, 200, 1)
 
-	// Filter the images
-	_, paths, err = filterAndLabelData(paths)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// epochCount := 10
+	// for o := 0; o < epochCount; o++ {
+	// 	fmt.Printf("Iteration: %d/%d\n", o+1, epochCount)
+	// 	for i := 0; i < len(trainingImages); i++ {
+	// 		//fmt.Printf("Image #%d/%d, OutputCount: %d\n", i+1, len(trainingImages), trainingSetExpectedData[i].Len())
+	// 		err := network.TrainMonnochromeImage(trainingImages[i], trainingSetExpectedData[i])
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
+	// 	}
+	// }
 
-	// Segment data set into a training set and a testing set
-	testingSet, trainingSet, _ := data.SegmentDataSet(paths, 5)
+	// // Test network on dataset to check trained accuracy
+	// gotRight := 0
+	// for i := 0; i < len(testingImages); i++ {
+	// 	fmt.Printf("Testing image %d/%d\n", i+1, len(testingImages))
+	// 	result, err := network.PredictMonochromeImage(testingImages[i])
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
 
-	fmt.Printf("Training Set Size: %d, Testing Set Size: %d\n", len(trainingSet), len(testingSet))
+	// 	// Find the index with the highest output
+	// 	maxIndex := -1
+	// 	for o := 0; o < result.Len(); o++ {
+	// 		if maxIndex == -1 {
+	// 			maxIndex = o
+	// 		} else {
+	// 			if result.AtVec(maxIndex) < result.AtVec(o) {
+	// 				maxIndex = o
+	// 			}
+	// 		}
+	// 	}
 
-	// label the data
-	trainingSetLabels, trainingSet, err := filterAndLabelData(trainingSet)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// 	// Check if the network predicted correctly
+	// 	fmt.Printf("Result: %d, Expected: %d\n", maxIndex, testingSetLabels[i])
+	// 	if maxIndex == testingSetLabels[i] {
+	// 		gotRight++
+	// 		fmt.Println("Got it right!!")
+	// 	}
+	// }
 
-	testingSetLabels, testingSet, err := filterAndLabelData(testingSet)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Generate the expected vectors for each label for testing and training
-	trainingSetExpectedData := generateExpectedOutputFromLables(trainingSetLabels)
-	// testingSetExpectedData := generateExpectedOutputFromLables(testingSetLabels)
-
-	// Load images from disk
-	trainingImages, err := data.LoadMonochromeImages(trainingSet, 32, 24)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	testingImages, err := data.LoadMonochromeImages(testingSet, 32, 24)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	w, h := trainingImages[0].GetDense().Dims()
-	fmt.Printf("Width of training images: %d,%d\n", w, h)
-
-	w, h = testingImages[0].GetDense().Dims()
-	fmt.Printf("Width of testing images: %d,%d\n", w, h)
-
-	fmt.Printf("Number of images in training set: %d\n", len(trainingImages))
-	fmt.Printf("Number of images in testing set: %d\n", len(testingImages))
-	fmt.Printf("Number of labels in training set: %d\n", len(trainingSetLabels))
-	fmt.Printf("Number of labels in training set: %d\n", len(testingSetLabels))
-
-	imageWidth := trainingImages[0].Width
-	imageHeight := trainingImages[0].Height
-	network := core.CreateNetwork(imageWidth*imageHeight, 10, 1, 200, 1)
-
-	epochCount := 10
-	for o := 0; o < epochCount; o++ {
-		fmt.Printf("Iteration: %d/%d\n", o+1, epochCount)
-		for i := 0; i < len(trainingImages); i++ {
-			//fmt.Printf("Image #%d/%d, OutputCount: %d\n", i+1, len(trainingImages), trainingSetExpectedData[i].Len())
-			err := network.TrainMonnochromeImage(trainingImages[i], trainingSetExpectedData[i])
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-
-	// Test network on dataset to check trained accuracy
-	gotRight := 0
-	for i := 0; i < len(testingImages); i++ {
-		fmt.Printf("Testing image %d/%d\n", i+1, len(testingImages))
-		result, err := network.PredictMonochromeImage(testingImages[i])
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Find the index with the highest output
-		maxIndex := -1
-		for o := 0; o < result.Len(); o++ {
-			if maxIndex == -1 {
-				maxIndex = o
-			} else {
-				if result.AtVec(maxIndex) < result.AtVec(o) {
-					maxIndex = o
-				}
-			}
-		}
-
-		// Check if the network predicted correctly
-		fmt.Printf("Result: %d, Expected: %d\n", maxIndex, testingSetLabels[i])
-		if maxIndex == testingSetLabels[i] {
-			gotRight++
-			fmt.Println("Got it right!!")
-		}
-	}
-
-	fmt.Printf("Got Right: %d, Out Of: %d, Ratio: %f\n", gotRight, len(testingImages), float64(gotRight)/float64(len(testingImages)))
+	// fmt.Printf("Got Right: %d, Out Of: %d, Ratio: %f\n", gotRight, len(testingImages), float64(gotRight)/float64(len(testingImages)))
 }
 
 func filterAndLabelData(paths []string) (labels []int, filteredPaths []string, err error) {
@@ -258,7 +203,6 @@ func mnistPredict(net *core.NeuralNet) {
 			}
 		}
 		target, _ := strconv.Atoi(record[0])
-		fmt.Printf("Guessed: %d, Actually: %d\n", best, target)
 		if best == target {
 			score++
 		}
