@@ -2,6 +2,7 @@
 package data
 
 import (
+	"errors"
 	"image"
 	"image/png"
 	"os"
@@ -23,6 +24,10 @@ func LoadMonochromeImages(paths []string, width int, height int) ([]*MonochromeI
 	active := make(chan bool, maxOpenFiles) // Limit the number of goroutines loading files
 	for i := 0; i < maxOpenFiles; i++ {     // Fill the buffered channel
 		active <- true
+	}
+
+	if len(paths) == 0 {
+		return nil, errors.New("No image paths provided to load")
 	}
 
 	for i := 0; i < len(paths); i++ {
