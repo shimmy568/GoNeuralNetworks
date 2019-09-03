@@ -26,7 +26,11 @@ func runMnistDataFF() {
 	n.SaveWeights("test.model")
 
 	n2 := core.CreateNetwork(28*28, 10, 1, 200, 0.1)
-	n2.LoadWeights("test.model")
+	err := n2.LoadWeights("test.model")
+	if err != nil {
+		panic(err)
+	}
+
 	mnistPredict(&n2)
 }
 

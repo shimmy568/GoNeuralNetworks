@@ -2,12 +2,13 @@ package core
 
 import (
 	"bufio"
-	"encoding/csv"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"strconv"
+	"strings"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -80,8 +81,8 @@ func (n *NeuralNet) GetHiddenLayerSize() int {
 
 // SaveWeights save the weights of the network to a file on disk
 func (n *NeuralNet) SaveWeights(path string) error {
-	dataFile, _ := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0662)
-	writer := csv.NewWriter(bufio.NewWriter(dataFile))
+	dataFile, _ := os.OpenFile(path, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0662)
+	writer := bufio.NewWriter(dataFile)
 	defer dataFile.Close()
 
 	// Write network metadata in first row of csv
@@ -89,44 +90,43 @@ func (n *NeuralNet) SaveWeights(path string) error {
 	outputCount := strconv.Itoa(n.outputCount)
 	hiddenLayerCount := strconv.Itoa(n.hiddenLayers)
 	hiddenLayerSize := strconv.Itoa(n.hiddenLayerSize)
-	info := []string{inputCount, outputCount, hiddenLayerCount, hiddenLayerSize}
-	writer.Write(info)
+	info := inputCount + "," + outputCount + "," + hiddenLayerCount + "," + hiddenLayerSize + "\n"
+	writer.Write([]byte(info))
 
 	// Convert all layers of network to string array
-	data := make([]string, 0)
 	for i := range n.weights {
-		// Convert layer to btye array
-		rawData, err := n.weights[i].MarshalBinary()
-		if err != nil {
-			return err
+		r, c := n.weights[i].Dims()
+		var str strings.Builder
+		for curRow := 0; curRow < r; curRow++ {
+			for curCol := 0; curCol < c; curCol++ {
+				str.WriteString(fmt.Sprintf("%f,", n.weights[i].At(curRow, curCol)))
+			}
 		}
 
-		// Add byte array to data array as string
-		data = append(data, string(rawData))
+		// Write the layer of weights to the csv
+		str.WriteByte('\n')
+		writer.Write([]byte(str.String()))
 	}
-
-	// Write layer data to network
-	writer.Write(data)
 
 	return nil
 }
 
 // LoadWeights load the weights of the network from a file on disk
 func (n *NeuralNet) LoadWeights(path string) error {
-	dataFile, _ := os.Open(path)
-	reader := csv.NewReader(bufio.NewReader(dataFile))
-	defer dataFile.Close()
+	rawData, err := ioutil.ReadFile(path)
 
-	rawMetadata, err := reader.Read()
+	lines := strings.Split(string(rawData), "\n")
+	metaDataLine := lines[0]
 	if err != nil {
 		return err
 	}
 
 	// The array that holds the parsed metadata
 	// Spots in the array are as follows [inputCount, outputCount, hiddenLayerCount, hiddenLayerSize]
+	splitData := strings.Split(string(metaDataLine), ",")
 	metadata := make([]int, 4)
-	for i := range rawMetadata {
-		metadata[i], err = strconv.Atoi(rawMetadata[i])
+	for i := range splitData {
+		metadata[i], err = strconv.Atoi(splitData[i])
 		if err != nil {
 			return err
 		}
@@ -149,15 +149,28 @@ func (n *NeuralNet) LoadWeights(path string) error {
 		return errors.New("Hidden layer size doesn't match the network")
 	}
 
-	// Read the layer data from the file
-	layerData, err := reader.Read()
-	if err != nil {
-		return err
-	}
+	// Read and parse each layer into the network
+	for i := 0; i < n.hiddenLayers+1; i++ {
+		line := lines[i+1]
+		if err != nil {
+			return err
+		}
 
-	// Parse the layer data from the file
-	for i := range layerData {
-		n.weights[i].UnmarshalBinary([]byte(layerData[i]))
+		layerData := strings.Split(string(line), ",")
+		// Load each value for the current layer into the network
+		r, c := n.weights[i].Dims()
+		for curRow := 0; curRow < r; curRow++ {
+			for curCol := 0; curCol < c; curCol++ {
+				// Parse the float and check for error
+				val, err := strconv.ParseFloat(layerData[(curRow*c)+curCol], 64)
+				if err != nil {
+					return err
+				}
+
+				// Save the weight to the array
+				n.weights[i].Set(curRow, curCol, val)
+			}
+		}
 	}
 
 	return nil
